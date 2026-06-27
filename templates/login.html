@@ -1,0 +1,44 @@
+{% extends "index.html" %}
+{% block content %}
+<div class="flex flex-col items-center gap-4">
+    <h3 class="text-center text-8xl text-gray-800">{{ page_name }}</h3>
+
+    {% if current_user.is_authenticated %}
+    <p class="text-lg text-gray-800">Hello, {{ current_user.username }}</p>
+    <a class="text-base text-gray-800" href="{{url_for('logout')}}">Log out</a>
+
+    {% else %}
+    <form method="post">
+        <div class="flex flex-col items-center gap-2">
+            {{ form.hidden_tag() }}
+            <div class="p-2">
+                {{ form.username.label(class="text-left") }}
+                {{ form.username(class="border border-gray-300 rounded-md p-2") }}
+            </div>
+            <div class="p-2">
+                {{ form.password.label(class="text-left") }}
+                {{ form.password(class="border border-gray-300 rounded-md p-2") }}
+            </div>
+
+            {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+            {% for category, message in messages %}
+            <span class="text-red-600 text-base">{{ message }}</span>
+            {% endfor %}
+            {% endif %}
+            {% endwith %}
+
+            {{ form.submit(class='rounded-md p-2 transition-colors duration-200 hover:bg-gray-200/60') }}
+        </div>
+
+    </form>
+
+
+    {% if page_name == 'Login' %}
+    <a class="text-base text-gray-800" href="{{url_for('signin')}}">Sign in</a>
+    {% else %}
+    <a class="text-base text-gray-800" href="{{url_for('login')}}">Log in</a>
+    {% endif %}
+    {% endif %}
+</div>
+{% endblock %}
