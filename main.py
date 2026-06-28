@@ -9,7 +9,7 @@ from extension import *
 
 
 login_manager = LoginManager()
-
+login_manager.login_view = 'login'
 
 db.init_app(app)
 login_manager.init_app(app)
@@ -70,6 +70,34 @@ def signin():
 def logout():
     logout_user()
     return redirect(url_for('login'))
+
+
+@app.route('/dashboard', methods=['GET', 'POST'])
+@login_required
+def dashboard():
+    add_course_form = AddCourseForm()
+
+    if add_course_form.validate_on_submit():
+        assessment_grade = add_course_form.assessment_of_standards_grade.data * (add_course_form.assessment_of_standards_weight.data / 100)
+        practice_grade = add_course_form.practice_of_standards_grade.data * (add_course_form.practice_of_standards_weight.data / 100)
+        final_grade = assessment_grade + practice_grade
+        new_course = Course(
+            user_id=current_user.id,
+            name=add_course_form.course_name.data,
+            grade=final_grade,
+            assessment_weight=add_course_form.assessment_of_standards_weight.data,
+            practice_weight=add_course_form.practice_of_standards_weight.data
+            )
+        current_user.courses.append(new_course)
+        db.session.commit()        
+
+    current_courses = current_user.courses
+    return render_template('dashboard.html', current_courses=current_courses, add_course_form=add_course_form)
+
+
+@app.route('/contact')
+def contact():
+    return render_template('contact.html')
 
 if __name__ == '__main__':
     app.run(debug=True)
