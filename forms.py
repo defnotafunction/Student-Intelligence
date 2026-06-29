@@ -14,4 +14,11 @@ class AddCourseForm(FlaskForm):
     practice_of_standards_grade = IntegerField('Practice of Standards Grade', validators=[DataRequired(), NumberRange(min=0)])
     assessment_of_standards_grade = IntegerField('Assessment of Standards Grade', validators=[DataRequired(), NumberRange(min=0)])
     submit = SubmitField('Submit')
-    # Add places for assessment and practice percentages
+
+class DeleteCourseForm(FlaskForm):
+    submit = SubmitField('Delete')
+
+class UpdateCourseForm(FlaskForm):
+    new_grade = IntegerField('New Grade', validators=[DataRequired(), NumberRange(min=0)])
+    submit = SubmitField('Save')
+    

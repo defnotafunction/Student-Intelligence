@@ -1,4 +1,4 @@
-from flask import render_template, redirect, url_for, flash
+from flask import render_template, redirect, url_for, flash, request
 from flask_login import LoginManager, current_user, login_user, logout_user, login_required
 from werkzeug.security import check_password_hash
 from sqlalchemy import select
@@ -6,7 +6,6 @@ import os
 from forms import *
 from helper import *
 from extension import *
-
 
 login_manager = LoginManager()
 login_manager.login_view = 'login'
@@ -41,10 +40,8 @@ def login():
             if check_password_hash(user.hashed_password, input_password):
                 login_user(user)
                 return redirect(url_for('index'))
-
             
         flash('Wrong username or password.')
-
 
     return render_template('login.html', page_name='Login', form=login_form)
 
@@ -65,17 +62,26 @@ def signin():
 
     return render_template('login.html', page_name='Sign In', form=signin_form)
 
-
 @app.route('/logout')
 def logout():
     logout_user()
     return redirect(url_for('login'))
 
-
-@app.route('/dashboard', methods=['GET', 'POST'])
+@app.route('/courses', methods=['GET', 'POST'])
 @login_required
-def dashboard():
+def courses():
+    delete_course_form = DeleteCourseForm()
     add_course_form = AddCourseForm()
+    update_course_form = UpdateCourseForm()
+    dropdown_course_id = request.form.get('course_id')  # Course ID from the Dropdown Box of Change Courses
+    dropdown_course = None
+    
+    if dropdown_course_id:
+        dropdown_course = db.session.get(Course, dropdown_course_id)
+
+    if update_course_form.validate_on_submit():
+        dropdown_course.grade = update_course_form.new_grade.data
+        db.session.commit()
 
     if add_course_form.validate_on_submit():
         assessment_grade = add_course_form.assessment_of_standards_grade.data * (add_course_form.assessment_of_standards_weight.data / 100)
@@ -89,11 +95,28 @@ def dashboard():
             practice_weight=add_course_form.practice_of_standards_weight.data
             )
         current_user.courses.append(new_course)
-        db.session.commit()        
+        db.session.commit()   
+
+    
 
     current_courses = current_user.courses
-    return render_template('dashboard.html', current_courses=current_courses, add_course_form=add_course_form)
+    return render_template(
+                            'courses.html',
+                            current_courses=current_courses,
+                            add_course_form=add_course_form,
+                            delete_course_form=delete_course_form,
+                            dropdown_course=dropdown_course,
+                            update_course_form=update_course_form
+                            )
 
+@app.route('/delete-course/<int:course_id>', methods=['POST'])
+@login_required
+def delete_course(course_id: int):
+    course_to_delete = db.session.get(Course, course_id)
+    current_user.courses.remove(course_to_delete)
+    db.session.commit()
+
+    return redirect(url_for('courses'))
 
 @app.route('/contact')
 def contact():

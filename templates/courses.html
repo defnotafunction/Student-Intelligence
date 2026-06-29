@@ -1,0 +1,97 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h3 class="text-left text-4xl text-gray-800 m-10">Courses</h3>
+<div class="max-w-6xl mx-auto p-8">
+    <div class="grid grid-cols-2 gap-4 p-8">
+
+        <!-- Item 1: Grades -->
+        <div class="max-w-xl w-full p-6 rounded-lg shadow-xl/30">
+            <h5 class="text-center text-2xl text-gray-800 m-10">Grades</h5>
+
+            {% for course in current_courses %}
+            <div class="m-5">
+                <div class="border border-gray-300 rounded-md p-2">
+                    <p>{{course.name}} - {{course.grade}}% (AoS Weight: {{ course.assessment_weight }}% / PoS Weight: {{
+                        course.practice_weight }}%)</p>
+                </div>
+                <form action="{{ url_for('delete_course', course_id=course.id) }}" method="POST"
+                    onclick="return confirm('Are you sure you want to delete this item?');">
+                    {{ delete_course_form.hidden_tag() }}
+                    <button type="submit"
+                        class="rounded-md p-2 transition-colors duration-800 hover:text-red-600 hover:bg-gray-200/60">Delete</button>
+                </form>
+            </div>
+            {% endfor %}
+        </div>
+
+
+
+        <!-- Item 2: Add Courses -->
+        <div class="w-full p-6 rounded-lg shadow-xl/30">
+            <h5 class="text-center text-2xl text-gray-800 m-10">Add Course</h5>
+            <form method="post" class="flex flex-col gap-4">
+                {{ add_course_form.hidden_tag() }}
+
+                {{ add_course_form.course_name.label }}
+                {{ add_course_form.course_name(class="border border-gray-300 rounded-md p-2") }}
+
+                {{ add_course_form.practice_of_standards_weight.label }}
+                <span>{{ add_course_form.practice_of_standards_weight(class="border border-gray-300 rounded-md p-2") }}
+                    %</span>
+
+                {{ add_course_form.assessment_of_standards_weight.label }}
+                <span>{{ add_course_form.assessment_of_standards_weight(class="border border-gray-300 rounded-md p-2")
+                    }} %</span>
+
+                {{ add_course_form.practice_of_standards_grade.label }}
+                <span>{{ add_course_form.practice_of_standards_grade(class="border border-gray-300 rounded-md p-2") }}
+                    %</span>
+
+                {{ add_course_form.assessment_of_standards_grade.label }}
+                <span>{{ add_course_form.assessment_of_standards_grade(class="border border-gray-300 rounded-md p-2") }}
+                    %</span>
+
+                {{ add_course_form.submit(class='rounded-md p-2 transition-colors duration-200 hover:bg-gray-200/60') }}
+
+
+
+
+            </form>
+        </div>
+
+        <!-- Item 3: Update Course Data -->
+        <div class="max-w-xl w-full p-6 rounded-lg shadow-xl/30">
+            <h5 class="text-center text-2xl text-gray-800 m-10">Update Course</h5>
+            <form method="POST">
+                <select name="course_id"
+                    class="w-full rounded-md border border-gray-300 bg-white p-2 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500">
+
+                    {% for course in current_courses %}
+                    <option value="{{ course.id }}">{{ course.name }}</option>
+                    {% endfor %}
+
+                </select>
+                <button type="submit"
+                    class="rounded-md p-2 transition-colors duration-800 hover:text-sky-700 hover:bg-gray-200/60">Load</button>
+            </form>
+
+            {% if dropdown_course %}
+            <form method="POST">
+                <h5 class="text-center text-l text-gray-800 m-5">{{dropdown_course.name}}</h5>
+                <input type="hidden" name="course_id" value="{{ dropdown_course.id }}">
+                {{ update_course_form.hidden_tag() }}
+
+                {{ update_course_form.new_grade.label }}
+                <span>{{ update_course_form.new_grade(class="border border-gray-300 rounded-md p-2") }} %</span>
+
+                {{ update_course_form.submit(class='rounded-md p-2 transition-colors duration-200 hover:bg-gray-200/60')
+                }}
+
+            </form>
+            {% endif %}
+        </div>
+
+    </div>
+</div>
+{% endblock %}
