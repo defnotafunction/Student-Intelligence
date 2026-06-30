@@ -19,7 +19,7 @@
                     onclick="return confirm('Are you sure you want to delete this item?');">
                     {{ delete_course_form.hidden_tag() }}
                     <button type="submit"
-                        class="rounded-md p-2 transition-colors duration-800 hover:text-red-600 hover:bg-gray-200/60">Delete</button>
+                        class="text-xs rounded-md p-2 transition-colors duration-800 hover:text-red-600 hover:bg-gray-200/60">Delete</button>
                 </form>
             </div>
             {% endfor %}
@@ -28,7 +28,7 @@
 
 
         <!-- Item 2: Add Courses -->
-        <div class="w-full p-6 rounded-lg shadow-xl/30">
+        <div class="w-full max-h-min p-6 rounded-lg shadow-xl/30">
             <h5 class="text-center text-2xl text-gray-800 m-10">Add Course</h5>
             <form method="post" class="flex flex-col gap-4">
                 {{ add_course_form.hidden_tag() }}
@@ -64,7 +64,7 @@
         <div class="max-w-xl w-full p-6 rounded-lg shadow-xl/30">
             <h5 class="text-center text-2xl text-gray-800 m-10">Update Course</h5>
             <form method="POST">
-                <select name="course_id"
+                <select name="update_course_id"
                     class="w-full rounded-md border border-gray-300 bg-white p-2 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500">
 
                     {% for course in current_courses %}
@@ -76,10 +76,10 @@
                     class="rounded-md p-2 transition-colors duration-800 hover:text-sky-700 hover:bg-gray-200/60">Load</button>
             </form>
 
-            {% if dropdown_course %}
+            {% if dropdown_update_course %}
             <form method="POST">
-                <h5 class="text-center text-l text-gray-800 m-5">{{dropdown_course.name}}</h5>
-                <input type="hidden" name="course_id" value="{{ dropdown_course.id }}">
+                <h5 class="text-center text-l text-gray-800 m-5">{{dropdown_update_course.name}}</h5>
+                <input type="hidden" name="update_course_id" value="{{ dropdown_update_course.id }}">
                 {{ update_course_form.hidden_tag() }}
 
                 {{ update_course_form.new_grade.label }}
@@ -92,6 +92,32 @@
             {% endif %}
         </div>
 
+        <!-- Item 4: Graphing Courses -->
+        <div class="min-w-xl w-full p-6 rounded-lg shadow-xl/30">
+            <h5 class="text-center text-2xl text-gray-800 m-10">Graph Grades</h5>
+            <form method="POST">
+                <select name="graph_course_id"
+                    class="w-full rounded-md border border-gray-300 bg-white p-2 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500">
+
+                    {% for course in current_courses %}
+                    <option value="{{ course.id }}">{{ course.name }}</option>
+                    {% endfor %}
+
+                </select>
+                <button type="submit"
+                    class="rounded-md p-2 transition-colors duration-800 hover:text-sky-700 hover:bg-gray-200/60">Load</button>
+            </form>
+
+            {% if graph_html %}
+            <div class="w-full h-[400px] overflow-hidden">
+                {{ graph_html | safe }}
+            </div>
+            {% else %}
+
+            <p class="text-red-600 text-base">Not enough data to graph</p>
+
+            {% endif %}
+        </div>
     </div>
 </div>
 {% endblock %}

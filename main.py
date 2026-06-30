@@ -7,6 +7,7 @@ from forms import *
 from helper import *
 from extension import *
 
+
 login_manager = LoginManager()
 login_manager.login_view = 'login'
 
@@ -15,7 +16,6 @@ login_manager.init_app(app)
 
 with app.app_context():
     db.create_all()
-
 
 @login_manager.user_loader
 def load_user(user_id):
@@ -73,31 +73,61 @@ def courses():
     delete_course_form = DeleteCourseForm()
     add_course_form = AddCourseForm()
     update_course_form = UpdateCourseForm()
-    dropdown_course_id = request.form.get('course_id')  # Course ID from the Dropdown Box of Change Courses
-    dropdown_course = None
-    
-    if dropdown_course_id:
-        dropdown_course = db.session.get(Course, dropdown_course_id)
+    dropdown_update_course_id = request.form.get('update_course_id')  # Course ID from the Dropdown Box of Change Courses
+    dropdown_update_course = None
+    dropdown_graph_course_id = None
+    if len(list(current_user.courses)) >= 1:
+        dropdown_graph_course_id = current_user.courses[0].id
 
-    if update_course_form.validate_on_submit():
-        dropdown_course.grade = update_course_form.new_grade.data
-        db.session.commit()
+    graph_html = None
 
+    # ITEM 2 ADD COURSE
     if add_course_form.validate_on_submit():
         assessment_grade = add_course_form.assessment_of_standards_grade.data * (add_course_form.assessment_of_standards_weight.data / 100)
         practice_grade = add_course_form.practice_of_standards_grade.data * (add_course_form.practice_of_standards_weight.data / 100)
         final_grade = assessment_grade + practice_grade
+
         new_course = Course(
             user_id=current_user.id,
             name=add_course_form.course_name.data,
             grade=final_grade,
             assessment_weight=add_course_form.assessment_of_standards_weight.data,
             practice_weight=add_course_form.practice_of_standards_weight.data
-            )
-        current_user.courses.append(new_course)
-        db.session.commit()   
+        )
 
+        db.session.add(new_course)
+        db.session.flush()
+
+        initial_grade = Grade(course_id=new_course.id, percentage=final_grade)
+        db.session.add(initial_grade)
+        new_course.grades.append(initial_grade)
+        current_user.courses.append(new_course)
+        db.session.commit()
+
+    # ITEM 3: UPDATE COURSE
+    if dropdown_update_course_id:
+        dropdown_update_course = db.session.get(Course, dropdown_update_course_id)
+
+    if update_course_form.validate_on_submit():
+        new_grade = Grade(
+            course_id=dropdown_update_course_id,
+            percentage=update_course_form.new_grade.data
+                          )
+        dropdown_update_course.grades.append(new_grade)
+        dropdown_update_course.grade = update_course_form.new_grade.data
+        db.session.commit()
     
+    # ITEM 4: GRAPH COURSE
+    if dropdown_graph_course_id:
+        dropdown_graph_course = db.session.get(Course, dropdown_graph_course_id)
+        data = [(g.date_created, g.percentage) for g in dropdown_graph_course.grades]
+        
+        if len(data) >= 1:  # If there is data to plot
+            datetimes, grades = zip(*data)
+            datetimes, grades = list(datetimes), list(grades)
+            graph_html = create_grades_vs_time(datetimes, grades)
+            
+
 
     current_courses = current_user.courses
     return render_template(
@@ -105,8 +135,9 @@ def courses():
                             current_courses=current_courses,
                             add_course_form=add_course_form,
                             delete_course_form=delete_course_form,
-                            dropdown_course=dropdown_course,
-                            update_course_form=update_course_form
+                            dropdown_update_course=dropdown_update_course,
+                            update_course_form=update_course_form,
+                            graph_html=graph_html
                             )
 
 @app.route('/delete-course/<int:course_id>', methods=['POST'])
@@ -123,4 +154,4 @@ def contact():
     return render_template('contact.html')
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(debug=True, threaded=True)

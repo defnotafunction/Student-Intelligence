@@ -1,6 +1,7 @@
 from extension import db
 from flask_login import UserMixin
-import datetime
+from datetime import datetime, timezone
+
 
 class User(db.Model, UserMixin):
     id = db.Column(db.Integer, primary_key=True)
@@ -21,4 +22,4 @@ class Grade(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     course_id = db.Column(db.Integer, db.ForeignKey('course.id'))
     percentage = db.Column(db.Numeric(precision=5, scale=2), nullable=False)
-    date_created = db.Column(db.DateTime, default=datetime.timezone.utcnow)
+    date_created = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
