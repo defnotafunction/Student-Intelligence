@@ -15,11 +15,11 @@
                     <p>{{course.name}} - {{course.grade}}% (AoS Weight: {{ course.assessment_weight }}% / PoS Weight: {{
                         course.practice_weight }}%)</p>
                 </div>
-                <form action="{{ url_for('delete_course', course_id=course.id) }}" method="POST"
+                <form class="max-w-fit" action="{{ url_for('delete_course', course_id=course.id) }}" method="POST"
                     onclick="return confirm('Are you sure you want to delete this item?');">
                     {{ delete_course_form.hidden_tag() }}
                     <button type="submit"
-                        class="text-xs rounded-md p-2 transition-colors duration-800 hover:text-red-600 hover:bg-gray-200/60">Delete</button>
+                        class="text-xs max-w-fit rounded-md p-2 transition-colors duration-800 hover:text-red-600 hover:bg-gray-200/60">Delete</button>
                 </form>
             </div>
             {% endfor %}

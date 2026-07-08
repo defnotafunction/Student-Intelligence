@@ -67,6 +67,26 @@ def logout():
     logout_user()
     return redirect(url_for('login'))
 
+@app.route('/dashboard')
+@login_required
+def dashboard():
+    # Creating graphs for each course
+    made_graphs = []
+
+    for course in current_user.courses:
+        data = [(g.date_created, g.percentage) for g in course.grades]
+            
+        if len(data) >= 1:  # If there is data to plot
+            datetimes, grades = zip(*data)
+            datetimes, grades = list(datetimes), list(grades)
+            graph_html = create_grades_vs_time_with_predictions(datetimes, grades, 20)
+            made_graphs.append([course.name, graph_html])
+
+    return render_template('dashboard.html', made_graphs=made_graphs)    
+        
+    
+
+
 @app.route('/courses', methods=['GET', 'POST'])
 @login_required
 def courses():
@@ -127,7 +147,6 @@ def courses():
             datetimes, grades = list(datetimes), list(grades)
             graph_html = create_grades_vs_time(datetimes, grades)
             
-
 
     current_courses = current_user.courses
     return render_template(
