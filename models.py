@@ -13,10 +13,10 @@ class Course(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey("user.id"))
     name = db.Column(db.String,  nullable=False)
-    grade = db.Column(db.Numeric(precision=5, scale=2), nullable=False)
+    grade = db.Column(db.Numeric(precision=5, scale=2), nullable=False)  # Current Grade
     assessment_weight = db.Column(db.Numeric(precision=5, scale=2), nullable=False)
     practice_weight = db.Column(db.Numeric(precision=5, scale=2), nullable=False)
-    grades = db.relationship('Grade', backref='course', lazy='dynamic', cascade='all, delete-orphan')
+    grades = db.relationship('Grade', backref='course', lazy='dynamic', cascade='all, delete-orphan')  # Tracks all grade inputs
 
 class Grade(db.Model):
     id = db.Column(db.Integer, primary_key=True)

@@ -8,18 +8,28 @@
         <!-- Item 1: Course Progress -->
         <div class="max-w-xl w-full p-6 rounded-lg shadow-xl/30">
             <h5 class="text-center text-2xl text-gray-800 m-10">Progress</h5>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 p-8">
-                {% for name, graph in made_graphs %}
-                <div class="border border-gray-300 rounded-md p-2">
-                    <h5 class="text-left text-l text-gray-800 m-10">{{name}}</h5>
-                    <div class="w-full h-[400px] overflow-hidden">
-                        {{ graph | safe }}
-                    </div>
+            <div class="flex flex-col gap-6 p-8">
+                {% for graph in made_graphs %}
+                <div
+                    class="border border-gray-300 rounded-md p-2 w-full h-[400px] overflow-hidden [&_div]:!w-full [&_svg]:!w-full [&_canvas]:!w-full">
+                    {{ graph | safe }}
                 </div>
                 {% endfor %}
             </div>
         </div>
 
+        <!-- Item 2: Recommended Youtube Videos -->
+        <div class="max-w-xl w-full p-6 rounded-lg shadow-xl/30">
+            <h5 class="text-center text-2xl text-gray-800 m-10">Recommended Videos</h5>
+            <div class="flex flex-col gap-2 items-center">
+                {% for video_link in recommended_videos %}
+                <div class="w-full h-[400px] overflow-hidden flex justify-center">
+                    <iframe width="420" height="315" src="{{video_link}}">
+                    </iframe>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
 
     </div>
 </div>

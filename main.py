@@ -79,10 +79,19 @@ def dashboard():
         if len(data) >= 1:  # If there is data to plot
             datetimes, grades = zip(*data)
             datetimes, grades = list(datetimes), list(grades)
-            graph_html = create_grades_vs_time_with_predictions(datetimes, grades, 20)
-            made_graphs.append([course.name, graph_html])
+            graph_html = create_grades_vs_time_with_predictions(course.name, datetimes, grades, 20)
+            made_graphs.append(graph_html)
 
-    return render_template('dashboard.html', made_graphs=made_graphs)    
+    # Recommending videos for low grade courses
+    lowest_grade_course = min(current_user.courses, key=lambda x: x.grade)
+    results = query_youtube(lowest_grade_course.name)
+    result_links = ['https://youtube.com/embed/' + r['id'] for r in results]
+
+    return render_template(
+        'dashboard.html',
+        made_graphs=made_graphs,
+        recommended_videos=result_links
+        )    
         
     
 
@@ -145,7 +154,7 @@ def courses():
         if len(data) >= 1:  # If there is data to plot
             datetimes, grades = zip(*data)
             datetimes, grades = list(datetimes), list(grades)
-            graph_html = create_grades_vs_time(datetimes, grades)
+            graph_html = create_grades_vs_time(dropdown_graph_course.name, datetimes, grades)
             
 
     current_courses = current_user.courses

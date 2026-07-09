@@ -3,11 +3,11 @@ from models import *
 from extension import * 
 from werkzeug.security import generate_password_hash
 import plotly.graph_objects as go
-from sklearn.linear_model import LinearRegression
 from sklearn.svm import SVR
 from sklearn.preprocessing import StandardScaler
 from sklearn.pipeline import Pipeline
 from sklearn.base import BaseEstimator
+from youtube_search import YoutubeSearch
 
 def app_context_wrapper(func: callable):
     def inner(*args, **kwargs):        
@@ -17,6 +17,7 @@ def app_context_wrapper(func: callable):
 
     return inner
 
+# SQLALCHEMY FUNCTIONS
 @app_context_wrapper
 def get_user_from_username(db: SQLAlchemy, username: str):
     statement = select(User).where(User.username == username)
@@ -32,7 +33,8 @@ def create_and_save_user(db: SQLAlchemy, username: str, unhashed_password: str) 
     db.session.commit()
     return new_user
 
-def create_grades_vs_time(datetimes: list[datetime], grades: list[float]) -> str:
+# PLOTLY / SKLEARN FUNCTIONS
+def create_grades_vs_time(title: str, datetimes: list[datetime], grades: list[float]) -> str:
     if len(datetimes) < 1:
         return None
     
@@ -40,9 +42,9 @@ def create_grades_vs_time(datetimes: list[datetime], grades: list[float]) -> str
     days_from_min =  sorted([(d - min_date).total_seconds() / 86400 for d in datetimes])  # Convert seconds into days
     fig = go.Figure(data=go.Scatter(x=days_from_min, y=grades, mode='lines+markers'))
     fig.update_layout(
-        title="Grades over time",
-        xaxis_title="Days",
-        yaxis_title="Grades"
+        title=title,
+        xaxis_title="Day (Since Creation of Course)",
+        yaxis_title="Grade"
                     )
 
     graph_html = fig.to_html(
@@ -73,7 +75,7 @@ def predict_grades_from_datetimes(datetimes: list[datetime], grades: list[float]
     
     return predictions
 
-def create_grades_vs_time_with_predictions(datetimes: list[datetime], grades: list[float], days_into_future: int) -> str:
+def create_grades_vs_time_with_predictions(title: str, datetimes: list[datetime], grades: list[float], days_into_future: int) -> str:
     if len(datetimes) < 1:
         return None
     
@@ -82,7 +84,12 @@ def create_grades_vs_time_with_predictions(datetimes: list[datetime], grades: li
     
     predictions = predict_grades_from_datetimes(datetimes, grades, days_into_future)
     
-    fig = go.Figure(data=go.Scatter(x=days_from_min, y=grades, mode='lines+markers'))
+    fig = go.Figure(data=go.Scatter(
+        x=days_from_min,
+        y=grades,
+        mode='lines+markers',
+        name='Grades')
+        )
     
     fig.add_trace(
         go.Scatter(
@@ -93,9 +100,9 @@ def create_grades_vs_time_with_predictions(datetimes: list[datetime], grades: li
         )
     )
     fig.update_layout(
-        title="Grades over time",
-        xaxis_title="Days",
-        yaxis_title="Grades"
+        title=title,
+        xaxis_title="Day",
+        yaxis_title="Grade"
                     )
 
     graph_html = fig.to_html(
@@ -105,3 +112,8 @@ def create_grades_vs_time_with_predictions(datetimes: list[datetime], grades: li
         )
 
     return graph_html
+
+# GOOGLE API FUNCTIONS
+def query_youtube(query: str, num_results: int = 3):
+    result = YoutubeSearch(query, max_results=num_results)
+    return result.videos

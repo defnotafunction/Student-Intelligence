@@ -11,8 +11,8 @@ This project will be a Flask App that aids students with organizing and improvin
     - [ ] Show similar sentences / passages / parts
 
 - [ ] Grade Tracker
-    - [ ] Takes in user's classes and scores
-    - [ ] Track and predict progress
+    - [x] Takes in user's classes and scores
+    - [x] Track and predict progress
     - [ ] Give user tips based on goals
         - e.g: Which classes to prioritize, what score needed on future assignments to reach certain grade.
     - [ ] Optional: Give videos on user's weaknesses
