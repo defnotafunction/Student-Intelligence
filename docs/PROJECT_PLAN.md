@@ -15,7 +15,7 @@ This project will be a Flask App that aids students with organizing and improvin
     - [x] Track and predict progress
     - [ ] Give user tips based on goals
         - e.g: Which classes to prioritize, what score needed on future assignments to reach certain grade.
-    - [ ] Optional: Give videos on user's weaknesses
+    - [x] Optional: Give videos on user's weaknesses
 
 
 ## Directory

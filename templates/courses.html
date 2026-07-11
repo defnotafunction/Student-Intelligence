@@ -2,8 +2,8 @@
 
 {% block content %}
 <h3 class="text-left text-4xl text-gray-800 m-10">Courses</h3>
-<div class="max-w-6xl mx-auto p-8">
-    <div class="grid grid-cols-2 gap-4 p-8">
+<div class="mx-auto p-8">
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 w-full gap-4 p-8 items-start">
 
         <!-- Item 1: Grades -->
         <div class="max-w-xl w-full p-6 rounded-lg shadow-xl/30">
@@ -28,7 +28,7 @@
 
 
         <!-- Item 2: Add Courses -->
-        <div class="w-full max-h-min p-6 rounded-lg shadow-xl/30">
+        <div class="max-w-xl w-full max-h-min p-6 rounded-lg shadow-xl/30">
             <h5 class="text-center text-2xl text-gray-800 m-10">Add Course</h5>
             <form method="post" class="flex flex-col gap-4">
                 {{ add_course_form.hidden_tag() }}
@@ -93,7 +93,7 @@
         </div>
 
         <!-- Item 4: Graphing Courses -->
-        <div class="min-w-xl w-full p-6 rounded-lg shadow-xl/30">
+        <div class="max-w-xl w-full p-6 rounded-lg shadow-xl/30">
             <h5 class="text-center text-2xl text-gray-800 m-10">Graph Grades</h5>
             <form method="POST">
                 <select name="graph_course_id"
@@ -108,15 +108,11 @@
                     class="rounded-md p-2 transition-colors duration-800 hover:text-sky-700 hover:bg-gray-200/60">Load</button>
             </form>
 
-            {% if graph_html %}
+
             <div class="w-full h-[400px] overflow-hidden">
                 {{ graph_html | safe }}
             </div>
-            {% else %}
 
-            <p class="text-red-600 text-base">Not enough data to graph</p>
-
-            {% endif %}
         </div>
     </div>
 </div>

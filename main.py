@@ -8,14 +8,12 @@ from helper import *
 from extension import *
 
 
+
 login_manager = LoginManager()
 login_manager.login_view = 'login'
 
 db.init_app(app)
 login_manager.init_app(app)
-
-with app.app_context():
-    db.create_all()
 
 @login_manager.user_loader
 def load_user(user_id):
@@ -57,7 +55,7 @@ def signin():
             flash('User already exists.')
         else:
             user = create_and_save_user(db, input_username, input_password)
-            login_user(user)
+            login_user(user, remember=True)
             return redirect(url_for('index'))
 
     return render_template('login.html', page_name='Sign In', form=signin_form)
@@ -76,11 +74,10 @@ def dashboard():
     for course in current_user.courses:
         data = [(g.date_created, g.percentage) for g in course.grades]
             
-        if len(data) >= 1:  # If there is data to plot
-            datetimes, grades = zip(*data)
-            datetimes, grades = list(datetimes), list(grades)
-            graph_html = create_grades_vs_time_with_predictions(course.name, datetimes, grades, 20)
-            made_graphs.append(graph_html)
+        datetimes, grades = zip(*data)
+        datetimes, grades = list(datetimes), list(grades)
+        graph_html = create_grades_vs_time_with_predictions(course.name, datetimes, grades, 20)
+        made_graphs.append(graph_html)
 
     # Recommending videos for low grade courses
     lowest_grade_course = min(current_user.courses, key=lambda x: x.grade)
@@ -102,18 +99,24 @@ def courses():
     delete_course_form = DeleteCourseForm()
     add_course_form = AddCourseForm()
     update_course_form = UpdateCourseForm()
-    dropdown_update_course_id = request.form.get('update_course_id')  # Course ID from the Dropdown Box of Change Courses
     dropdown_update_course = None
-    dropdown_graph_course_id = None
+    dropdown_update_course_id = request.form.get('update_course_id')  # Course ID from the Dropdown Box of Change Courses
+    dropdown_graph_course_id = request.form.get('graph_course_id')
+    
+    # Default update form / graph that'll pop up if user didn't select
     if len(list(current_user.courses)) >= 1:
-        dropdown_graph_course_id = current_user.courses[0].id
+        if dropdown_update_course_id is None:
+            dropdown_update_course_id = current_user.courses[0].id
+
+        if dropdown_graph_course_id is None:
+            dropdown_graph_course_id = current_user.courses[0].id
+       
 
     graph_html = None
-
     # ITEM 2 ADD COURSE
     if add_course_form.validate_on_submit():
-        assessment_grade = add_course_form.assessment_of_standards_grade.data * (add_course_form.assessment_of_standards_weight.data / 100)
-        practice_grade = add_course_form.practice_of_standards_grade.data * (add_course_form.practice_of_standards_weight.data / 100)
+        assessment_grade = float(add_course_form.assessment_of_standards_grade.data) * (add_course_form.assessment_of_standards_weight.data / 100)
+        practice_grade = float(add_course_form.practice_of_standards_grade.data) * (add_course_form.practice_of_standards_weight.data / 100)
         final_grade = assessment_grade + practice_grade
 
         new_course = Course(
@@ -151,10 +154,9 @@ def courses():
         dropdown_graph_course = db.session.get(Course, dropdown_graph_course_id)
         data = [(g.date_created, g.percentage) for g in dropdown_graph_course.grades]
         
-        if len(data) >= 1:  # If there is data to plot
-            datetimes, grades = zip(*data)
-            datetimes, grades = list(datetimes), list(grades)
-            graph_html = create_grades_vs_time(dropdown_graph_course.name, datetimes, grades)
+        datetimes, grades = zip(*data)
+        datetimes, grades = list(datetimes), list(grades)
+        graph_html = create_grades_vs_time(dropdown_graph_course.name, datetimes, grades)
             
 
     current_courses = current_user.courses
@@ -182,4 +184,7 @@ def contact():
     return render_template('contact.html')
 
 if __name__ == '__main__':
-    app.run(debug=True, threaded=True)
+    with app.app_context():
+        db.create_all()
+
+    app.run(threaded=True)
