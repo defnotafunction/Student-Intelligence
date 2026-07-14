@@ -3,8 +3,13 @@
 <h3 class="text-left text-4xl text-gray-800 m-10">Dashboard</h3>
 
 <div class="mx-auto p-8">
+    <div class="max-w-5/6 w-full p-6 rounded-lg shadow-xl/30 flex flex-col">
+        <h5 class="text-left text-2xl text-gray-800 m-10">Advice</h3>
+            {% for tip in course_tips %}
+            <span class="p-3">{{tip}}</span>
+            {% endfor %}
+    </div>
     <div class="grid grid-cols-2 grid-rows-3 gap-4 p-8 items-start">
-
         <!-- Item 1: Course Progress -->
         <div class="w-full p-6 rounded-lg shadow-xl/30">
             <h5 class="text-center text-2xl text-gray-800 m-10">Progress</h5>

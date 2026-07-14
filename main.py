@@ -1,3 +1,6 @@
+from dotenv import load_dotenv
+load_dotenv()
+
 from flask import render_template, redirect, url_for, flash, request
 from flask_login import LoginManager, current_user, login_user, logout_user, login_required
 from werkzeug.security import check_password_hash
@@ -68,10 +71,10 @@ def logout():
 @app.route('/dashboard')
 @login_required
 def dashboard():
-    # Creating graphs for each course
     made_graphs = []
     result_links = []
 
+    # Creating graphs for each course
     for course in current_user.courses:
         data = [(g.date_created, g.percentage) for g in course.grades]
             
@@ -88,14 +91,18 @@ def dashboard():
 
     # Recommending videos based on difference of course grade and its goal (How far it is from goal)
     if list(current_user.courses):
-        lowest_grade_course = min(current_user.courses, key=lambda x: x.grade_goal - x.grade)
-        results = query_youtube(lowest_grade_course.name)
+        lowest_grade_course = max(current_user.courses, key=lambda x: x.grade_goal - x.grade)
+        results = query_youtube(f"{lowest_grade_course.name} help lessons")
         result_links = ['https://youtube.com/embed/' + r['id'] for r in results]
+
+    # Giving User tips based on goals
+    course_advice = prompt_gemini_for_course_advice(current_user.courses)
 
     return render_template(
         'dashboard.html',
         made_graphs=made_graphs,
-        recommended_videos=result_links
+        recommended_videos=result_links,
+        course_tips=course_advice
         )    
         
     

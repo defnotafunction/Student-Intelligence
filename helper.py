@@ -7,6 +7,10 @@ import plotly.graph_objects as go
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler
 from sklearn.svm import SVR
+from google import genai
+
+client = genai.Client(api_key=os.getenv('GEMINI_API_KEY'))
+
 
 def app_context_wrapper(func: callable):
     def inner(*args, **kwargs):        
@@ -168,8 +172,39 @@ def create_grades_vs_time_with_predictions(title: str, datetimes: list[datetime]
     return graph_html
 
 # GOOGLE API FUNCTIONS
-def query_youtube(query: str, num_results: int = 3):
+def query_youtube(query: str, num_results: int = 3) -> list[dict]:
     from youtube_search import YoutubeSearch
 
     result = YoutubeSearch(query, max_results=num_results)
     return result.videos
+
+def get_gemini_response(user_input: str) -> str:
+    interaction = client.interactions.create(
+        model="gemini-3.5-flash",
+        input=user_input
+    )
+
+    return interaction.output_text
+
+# Replace with any other LLM if needed
+def prompt_gemini_for_course_advice(course_objects: list[Course]) -> str:
+    course_prompts = []
+    
+    for course_obj in course_objects:
+        prompt = f"""
+                Give me tips and advice on my class, {course_obj.name}, based on the following attributes:
+                Current Grade: {course_obj.grade}
+                Past Grades: {[grade_obj.percentage for grade_obj in course_obj.grades]}
+                My Grade Goal: {course_obj.grade_goal}
+                Assessment/Test weight: {course_obj.assessment_weight}
+                Practice/Regular Assignment weight: {course_obj.practice_weight}
+                Latest grade update: {list(course_obj.grades)[-1].date_created}
+                """
+        course_prompts.append(prompt)
+    
+    final_prompt = "\n".join(course_prompts) + "Respond in this format 'CLASS (Class Name): (Advice)'"
+
+    response = get_gemini_response(final_prompt)
+    response = response.split('CLASS')
+
+    return response
