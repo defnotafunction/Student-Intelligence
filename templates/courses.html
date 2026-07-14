@@ -52,6 +52,10 @@
                 <span>{{ add_course_form.assessment_of_standards_grade(class="border border-gray-300 rounded-md p-2") }}
                     %</span>
 
+                {{ add_course_form.grade_goal.label }}
+                <span>{{ add_course_form.grade_goal(class="border border-gray-300 rounded-md p-2") }}
+                    %</span>
+
                 {{ add_course_form.submit(class='rounded-md p-2 transition-colors duration-200 hover:bg-gray-200/60') }}
 
 
@@ -77,13 +81,17 @@
             </form>
 
             {% if dropdown_update_course %}
-            <form method="POST">
+            <form method="POST" class="flex flex-col">
                 <h5 class="text-center text-l text-gray-800 m-5">{{dropdown_update_course.name}}</h5>
                 <input type="hidden" name="update_course_id" value="{{ dropdown_update_course.id }}">
                 {{ update_course_form.hidden_tag() }}
 
                 {{ update_course_form.new_grade.label }}
                 <span>{{ update_course_form.new_grade(class="border border-gray-300 rounded-md p-2") }} %</span>
+
+                {{ update_course_form.grade_goal.label }}
+                <span>{{ update_course_form.grade_goal(class="border border-gray-300 rounded-md p-2") }} %</span>
+
 
                 {{ update_course_form.submit(class='rounded-md p-2 transition-colors duration-200 hover:bg-gray-200/60')
                 }}

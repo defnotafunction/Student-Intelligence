@@ -34,6 +34,21 @@ def create_and_save_user(db: SQLAlchemy, username: str, unhashed_password: str) 
 
 # PLOTLY / SKLEARN FUNCTIONS
 def create_grades_vs_time(title: str, datetimes: list[datetime], grades: list[float]) -> str:
+    """
+    Creates and returns a graph by using datetimes as the x-axis and grades as the y-axis.
+
+    This function is for creating a visualization of a user's grade progress in a specific course.
+
+    Args:
+        title: A string that determines the title of the graph.
+        datetimes: A list of datetime objects.
+        grades: A list of floating point values within the range of 0-inf.
+
+    Returns:
+        A string with the HTML representation of the created graph.
+
+    """
+
     if len(datetimes) < 1:
         return None
     
@@ -54,7 +69,23 @@ def create_grades_vs_time(title: str, datetimes: list[datetime], grades: list[fl
 
     return graph_html
 
-def predict_grades_from_datetimes(datetimes: list[datetime], grades: list[float], days_into_future: int):
+def predict_grades_from_datetimes(datetimes: list[datetime], grades: list[float], days_into_future: int) -> list[float]:
+    """
+    Predicts future grades by fitting datetimes and grades data to a Support Vector Regression model.
+
+    This function converts the datetimes to the amount of days since the earliest datetime.
+    It then normalizes the data using Z-score normalization before fitting it to a Support Vector Regression model to predict future grades.
+
+    Args:
+        datetimes: A list of datetime objects.
+        grades: A list of floating point values within the range of 0-inf.
+        days_into_future: An integer that determines how many future days the model will predict for.
+
+    Returns:
+        A list of floating point values.
+
+    """
+
     min_date = min(datetimes)
     days_from_min = sorted([(d - min_date).total_seconds() / 86400 for d in datetimes])
     future_days = [days_from_min[-1] + i for i in range(1, days_into_future)]
@@ -73,7 +104,24 @@ def predict_grades_from_datetimes(datetimes: list[datetime], grades: list[float]
 
     return predictions
 
-def create_grades_vs_time_with_predictions(title: str, datetimes: list[datetime], grades: list[float], days_into_future: int) -> str:
+def create_grades_vs_time_with_predictions(title: str, datetimes: list[datetime], grades: list[float], grade_goal: int, days_into_future: int) -> str:
+    """
+    Creates and returns a graph by using datetimes for the x-axis, using grades for the y-axis, and fitting a Support Vector Regression model.
+
+    This function is for creating a visualization of a user's grade progress in a specific course.
+
+    Args:
+        title: A string that determines the title of the graph.
+        datetimes: A list of datetime objects.
+        grades: A list of floating point values within the range of 0-inf.
+        grade_goal: A floating point value that determines the y-value of the horizontal line that represents the goal of the course.
+        days_into_future: An integer that determines how many future days the model will predict for.
+
+    Returns:
+        A string with the HTML representation of the created graph.
+
+    """
+
     if len(datetimes) < 1:
         return None
     
@@ -100,19 +148,26 @@ def create_grades_vs_time_with_predictions(title: str, datetimes: list[datetime]
     fig.update_layout(
         title=title,
         xaxis_title="Day",
-        yaxis_title="Grade"
+        yaxis_title="Grade (%)"
                     )
+    
+    # Grade Goal minimum line
+    fig.add_hline(
+        y=grade_goal, 
+        line_dash="dot", 
+        annotation_text="Goal", 
+        annotation_position="top left"
+    )
 
     graph_html = fig.to_html(
         full_html=False,
         include_plotlyjs='cdn',
         config={'responsive': True}
-        )
+    )
 
     return graph_html
 
 # GOOGLE API FUNCTIONS
-@cache.memoize(timeout=3600)
 def query_youtube(query: str, num_results: int = 3):
     from youtube_search import YoutubeSearch
 

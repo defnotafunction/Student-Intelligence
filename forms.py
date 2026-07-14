@@ -1,6 +1,6 @@
 from flask_wtf import FlaskForm
 from wtforms import StringField, PasswordField, SubmitField, IntegerField, DecimalField
-from wtforms.validators import DataRequired, Length, NumberRange
+from wtforms.validators import DataRequired, Length, NumberRange, Optional
 
 class LoginForm(FlaskForm):
     username = StringField('Username', validators=[Length(min=5, max=22), DataRequired()])
@@ -13,6 +13,7 @@ class AddCourseForm(FlaskForm):
     assessment_of_standards_weight = IntegerField('Assessment of Standards Weight', validators=[DataRequired(), NumberRange(min=0)])
     practice_of_standards_grade = DecimalField('Practice of Standards Grade', validators=[DataRequired(), NumberRange(min=0)])
     assessment_of_standards_grade = DecimalField('Assessment of Standards Grade', validators=[DataRequired(), NumberRange(min=0)])
+    grade_goal = DecimalField('Goal (Grade to reach)', validators=[DataRequired(), NumberRange(min=0)])
     submit = SubmitField('Submit')
 
 class DeleteCourseForm(FlaskForm):
@@ -20,5 +21,6 @@ class DeleteCourseForm(FlaskForm):
 
 class UpdateCourseForm(FlaskForm):
     new_grade = DecimalField('New Grade', validators=[DataRequired(), NumberRange(min=0)])
+    grade_goal = DecimalField('Goal (Not Required)', validators=[Optional(), NumberRange(min=0)])
     submit = SubmitField('Save')
     

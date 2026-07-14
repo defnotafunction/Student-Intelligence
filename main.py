@@ -70,19 +70,27 @@ def logout():
 def dashboard():
     # Creating graphs for each course
     made_graphs = []
+    result_links = []
 
     for course in current_user.courses:
         data = [(g.date_created, g.percentage) for g in course.grades]
             
         datetimes, grades = zip(*data)
         datetimes, grades = list(datetimes), list(grades)
-        graph_html = create_grades_vs_time_with_predictions(course.name, datetimes, grades, 20)
+        graph_html = create_grades_vs_time_with_predictions(
+            title=course.name,
+            datetimes=datetimes,
+            grades=grades,
+            grade_goal=course.grade_goal,
+            days_into_future=20,
+            )
         made_graphs.append(graph_html)
 
-    # Recommending videos for low grade courses
-    lowest_grade_course = min(current_user.courses, key=lambda x: x.grade)
-    results = query_youtube(lowest_grade_course.name)
-    result_links = ['https://youtube.com/embed/' + r['id'] for r in results]
+    # Recommending videos based on difference of course grade and its goal (How far it is from goal)
+    if list(current_user.courses):
+        lowest_grade_course = min(current_user.courses, key=lambda x: x.grade_goal - x.grade)
+        results = query_youtube(lowest_grade_course.name)
+        result_links = ['https://youtube.com/embed/' + r['id'] for r in results]
 
     return render_template(
         'dashboard.html',
@@ -124,7 +132,8 @@ def courses():
             name=add_course_form.course_name.data,
             grade=final_grade,
             assessment_weight=add_course_form.assessment_of_standards_weight.data,
-            practice_weight=add_course_form.practice_of_standards_weight.data
+            practice_weight=add_course_form.practice_of_standards_weight.data,
+            grade_goal=float(add_course_form.grade_goal.data)
         )
 
         db.session.add(new_course)
@@ -141,12 +150,19 @@ def courses():
         dropdown_update_course = db.session.get(Course, dropdown_update_course_id)
 
     if update_course_form.validate_on_submit():
+        # Adds new grade to course's grade list
         new_grade = Grade(
             course_id=dropdown_update_course_id,
             percentage=update_course_form.new_grade.data
                           )
         dropdown_update_course.grades.append(new_grade)
         dropdown_update_course.grade = update_course_form.new_grade.data
+        
+        # If user fills in unrequired grade goal field
+        new_grade_goal = update_course_form.grade_goal.data
+        if new_grade_goal:
+            dropdown_graph_course.grade_goal = new_grade_goal
+
         db.session.commit()
     
     # ITEM 4: GRAPH COURSE
