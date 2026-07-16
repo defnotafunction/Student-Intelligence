@@ -3,11 +3,21 @@
 <h3 class="text-left text-4xl text-gray-800 m-10">Dashboard</h3>
 
 <div class="mx-auto p-8">
-    <div class="max-w-5/6 w-full p-6 rounded-lg shadow-xl/30 flex flex-col">
+    <div class="max-w-5/6 w-fit p-6 rounded-lg shadow-xl/30 flex flex-col">
         <h5 class="text-left text-2xl text-gray-800 m-10">Advice</h3>
+            {% if course_tips %}
+
             {% for tip in course_tips %}
             <span class="p-3">{{tip}}</span>
             {% endfor %}
+
+            {% endif %}
+            <form method="post" class="mx-auto">
+                {{ load_advice_form.hidden_tag() }}
+                {{ load_advice_form.submit(class='rounded-md p-2 transition-colors duration-200
+                hover:bg-gray-200/60')
+                }}
+            </form>
     </div>
     <div class="grid grid-cols-2 grid-rows-3 gap-4 p-8 items-start">
         <!-- Item 1: Course Progress -->

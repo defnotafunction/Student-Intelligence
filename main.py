@@ -1,7 +1,7 @@
 from dotenv import load_dotenv
 load_dotenv()
 
-from flask import render_template, redirect, url_for, flash, request
+from flask import render_template, redirect, url_for, flash, request, session
 from flask_login import LoginManager, current_user, login_user, logout_user, login_required
 from werkzeug.security import check_password_hash
 from sqlalchemy import select
@@ -39,7 +39,7 @@ def login():
             user = get_user_from_username(db, input_username)
             
             if check_password_hash(user.hashed_password, input_password):
-                login_user(user)
+                login_user(user, remember=True)
                 return redirect(url_for('index'))
             
         flash('Wrong username or password.')
@@ -68,11 +68,15 @@ def logout():
     logout_user()
     return redirect(url_for('login'))
 
-@app.route('/dashboard')
+@app.route('/dashboard', methods=['GET', 'POST'])
 @login_required
 def dashboard():
+    session.permanent = True
+
     made_graphs = []
     result_links = []
+    course_advice = []
+    load_advice_form = LoadCourseAdvice()
 
     # Creating graphs for each course
     for course in current_user.courses:
@@ -95,14 +99,25 @@ def dashboard():
         results = query_youtube(f"{lowest_grade_course.name} help lessons")
         result_links = ['https://youtube.com/embed/' + r['id'] for r in results]
 
-    # Giving User tips based on goals
-    course_advice = prompt_gemini_for_course_advice(current_user.courses)
+    # Giving user tips based on goals
+    if load_advice_form.is_submitted():
+        course_advice = prompt_gemini_for_course_advice(current_user.courses)
+        session['latest_course_advice'] = course_advice  # To prevent wasting API requests
+
+    if course_advice is None:
+        course_advice = ['You have no courses.']
+
+    latest_course_advice = session.get('latest_course_advice')
+    if latest_course_advice:
+        course_advice = session.get('latest_course_advice')
+
 
     return render_template(
         'dashboard.html',
         made_graphs=made_graphs,
         recommended_videos=result_links,
-        course_tips=course_advice
+        course_tips=course_advice,
+        load_advice_form=load_advice_form
         )    
         
     
@@ -144,11 +159,11 @@ def courses():
         )
 
         db.session.add(new_course)
-        db.session.flush()
-
+        
         initial_grade = Grade(course_id=new_course.id, percentage=final_grade)
         db.session.add(initial_grade)
         new_course.grades.append(initial_grade)
+        
         current_user.courses.append(new_course)
         db.session.commit()
 

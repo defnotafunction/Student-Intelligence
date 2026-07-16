@@ -190,6 +190,9 @@ def get_gemini_response(user_input: str) -> str:
 def prompt_gemini_for_course_advice(course_objects: list[Course]) -> str:
     course_prompts = []
     
+    if not course_objects:
+        return
+
     for course_obj in course_objects:
         prompt = f"""
                 Give me tips and advice on my class, {course_obj.name}, based on the following attributes:
