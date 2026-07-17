@@ -149,7 +149,7 @@ def create_grades_vs_time_with_predictions(title: str, datetimes: list[datetime]
         x=[*days_from_min, *[days_from_min[-1] + i for i in range(1, days_into_future)]],
         y=predictions,
         mode='lines',
-        name='Estimation'
+        name='Prediction'
         )
     )
     fig.update_layout(
@@ -210,7 +210,8 @@ def prompt_gemini_for_course_advice(course_objects: list[Course]) -> list[str]:
         prompt = f"""
                 Give me tips and advice on my class, {course_obj.name}, based on the following attributes:
                 Current Grade: {course_obj.grade}
-                Past Grades: {[grade_obj.percentage for grade_obj in course_obj.grades]}
+                All Grades Oldest-Newest: {[grade_obj.percentage for grade_obj in course_obj.grades]}
+                Date created for each list (Parallel list to 'All Grades'): {[grade_obj.date_created for grade_obj in course_obj.grades]}
                 My Grade Goal: {course_obj.grade_goal}
                 Assessment/Test weight: {course_obj.assessment_weight}
                 Practice/Regular Assignment weight: {course_obj.practice_weight}
@@ -229,9 +230,26 @@ def prompt_gemini_for_course_advice(course_objects: list[Course]) -> list[str]:
 def get_similar_sentences(text_block: str, user_text: str, amount_of_sentences: int):
     model = NearestNeighbors(n_neighbors=amount_of_sentences)
     new_text = text_block.split('.')
-    
+
     if len(new_text) == 1:  # If there aren't periods
         new_text = new_text[0].split('\n')
+    elif len(new_text) >= 50:
+        condensed_new_text = []
+        counter = 0
+        new_string = ""
+
+        for element in new_text:
+            new_string += element + '.'
+            counter += 1
+
+            if counter == 4:
+                condensed_new_text.append(new_string)
+                counter = 0
+                new_string = ""
+        
+        new_text = condensed_new_text
+
+    amount_of_sentences = min(amount_of_sentences, len(new_text))  # Avoid n_neighbors > n_samples_fit error
 
     embeddings = [transformer.encode(sentence) for sentence in new_text]
     encoded_user_text = transformer.encode(user_text)

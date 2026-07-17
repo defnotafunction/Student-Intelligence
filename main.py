@@ -9,7 +9,8 @@ import os
 from forms import *
 from helper import *
 from extension import *
-
+import io
+from pypdf import PdfReader
 
 
 login_manager = LoginManager()
@@ -215,22 +216,41 @@ def note_scanner():
     #if session.get('notes') is None:
     #    session['notes'] = []
 
+    notes_text = None
     add_notes_form = AddNotesForm()
     search_form = BasicSearchForm()
-    notes_text = None
+    
 
     if add_notes_form.validate_on_submit():
+        # User pasted text
+        if add_notes_form.note_content.data:
+            notes_text = add_notes_form.note_content.data
+        
+        # User uploaded PDF file
+        elif add_notes_form.pdf_content.data:
+            pdf_file = add_notes_form.pdf_content.data
+            pdf_reader = PdfReader(pdf_file)
+
+            extracted_text = ""
+            for page in pdf_reader.pages:
+                text = page.extract_text()
+                if text:  # Ensure the page has text content
+                    extracted_text += text + "\n"
+            
+            notes_text = extracted_text
+
+        session.pop('similar_sentences', None)
+        session.pop('user_notes_question', None)
+
         return render_template(
             'note_scanner.html',
             add_notes_form=add_notes_form,
             search_form=search_form,
-            notes_text=add_notes_form.note_content.data
+            notes_text=notes_text
         )
-
-
+ 
     if search_form.validate_on_submit():
         note_from_html = request.form.get('note_from_html')
-
         similar_sentences = get_similar_sentences(
             text_block=note_from_html,
             user_text=search_form.text_input.data,

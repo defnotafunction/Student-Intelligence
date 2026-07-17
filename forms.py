@@ -1,6 +1,7 @@
 from flask_wtf import FlaskForm
-from wtforms import StringField, PasswordField, SubmitField, TextAreaField, IntegerField, DecimalField
+from wtforms import StringField, PasswordField, SubmitField, TextAreaField, IntegerField, DecimalField, FileField
 from wtforms.validators import DataRequired, Length, NumberRange, Optional
+from flask_wtf.file import FileAllowed
 
 class LoginForm(FlaskForm):
     """Form used in the Login and Sign in route."""
@@ -34,11 +35,21 @@ class LoadCourseAdvice(FlaskForm):
 
 class AddNotesForm(FlaskForm):
     """Form used in the Note Scanner route."""
-    note_content = TextAreaField('Content of Notes', validators=[DataRequired()])
+    note_content = TextAreaField('Content of Notes')
+    pdf_content = FileField('Upload PDF', validators=[FileAllowed(['pdf'], 'PDF files only!')])
     submit = SubmitField('Upload')
+
+    def validate(self, extra_validators=None):
+        if not super().validate(extra_validators):  # Run standard validation
+            return False
+        
+        if not self.note_content.data and not self.pdf_content.data:  # If both fields are empty
+            return False
+
+        return True
 
 class BasicSearchForm(FlaskForm):
     """Form used in the Note Scanner route."""
     text_input = StringField(validators=[DataRequired()])
     submit = SubmitField('Search')
-    
+

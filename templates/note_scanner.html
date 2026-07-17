@@ -7,10 +7,14 @@
         <!-- ITEM 1: ADD NOTES FORM -->
         <div class="max-w-xl w-full p-6 rounded-lg shadow-xl/30">
             <h5 class="text-center text-2xl text-gray-800 m-10">Upload Notes</h5>
-            <form method="post" class="flex flex-col">
+            <form method="post" class="flex flex-col" enctype="multipart/form-data">
                 {{ add_notes_form.hidden_tag() }}
                 {{ add_notes_form.note_content.label }}
-                {{ add_notes_form.note_content(class="border border-gray-300 rounded-md p-2") }}
+                {{ add_notes_form.note_content(placeholder=notes_text, class="border border-gray-300 rounded-md
+                p-2") }}
+                <p class="text-base text-slate-800">Or</p>
+                {{ add_notes_form.pdf_content.label }}
+                {{ add_notes_form.pdf_content() }}
                 {{ add_notes_form.submit(class='rounded-md p-2 transition-colors duration-200 hover:bg-gray-200/60') }}
             </form>
         </div>
