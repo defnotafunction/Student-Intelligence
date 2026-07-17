@@ -18,6 +18,23 @@
                 <a href="{{ url_for('index') }}" class="hover:text-blue-500">Home</a>
                 <a href="{{ url_for('dashboard') }}" class="hover:text-blue-500">Dashboard</a>
                 <a href="{{ url_for('courses') }}" class="hover:text-blue-500">Courses</a>
+
+                <div class="relative inline-block">
+                    <input type="checkbox" id="mobile-toggle" class="peer hidden" />
+
+                    <label for="mobile-toggle" class="cursor-pointer hover:text-blue-500 flex items-center select-none">
+                        Tools
+                        <span class="ml-1 text-xs">▼</span>
+                    </label>
+
+
+                    <div
+                        class="absolute hidden peer-checked:block bg-white shadow-lg mt-2 rounded border min-w-[150px] z-50 left-0">
+                        <a href="{{ url_for('note_scanner') }}"
+                            class="block px-4 py-2 text-gray-800 hover:bg-blue-50 hover:text-blue-500">Note Scanner</a>
+                    </div>
+                </div>
+
                 <a href="{{ url_for('login') }}" class="hover:text-blue-500">Login</a>
                 <a href="{{ url_for('contact') }}" class="hover:text-blue-500">Contact</a>
             </nav>

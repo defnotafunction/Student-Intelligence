@@ -1,9 +1,9 @@
 from flask_wtf import FlaskForm
-from wtforms import StringField, PasswordField, SubmitField, IntegerField, DecimalField
+from wtforms import StringField, PasswordField, SubmitField, TextAreaField, IntegerField, DecimalField
 from wtforms.validators import DataRequired, Length, NumberRange, Optional
 
 class LoginForm(FlaskForm):
-    """Form used in the Login route."""
+    """Form used in the Login and Sign in route."""
     username = StringField('Username', validators=[Length(min=5, max=22), DataRequired()])
     password = PasswordField('Password', validators=[DataRequired(), Length(min=8)])
     submit = SubmitField('Submit')
@@ -31,4 +31,14 @@ class UpdateCourseForm(FlaskForm):
 class LoadCourseAdvice(FlaskForm):
     """Form used in the Dashboard route."""
     submit = SubmitField('Load')
+
+class AddNotesForm(FlaskForm):
+    """Form used in the Note Scanner route."""
+    note_content = TextAreaField('Content of Notes', validators=[DataRequired()])
+    submit = SubmitField('Upload')
+
+class BasicSearchForm(FlaskForm):
+    """Form used in the Note Scanner route."""
+    text_input = StringField(validators=[DataRequired()])
+    submit = SubmitField('Search')
     

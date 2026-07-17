@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% block content %}
+<h3 class="text-left text-4xl text-gray-800 m-10">Note Scanner</h3>
+
+<div class="mx-auto p-8">
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 w-full gap-4 p-8 items-start">
+        <!-- ITEM 1: ADD NOTES FORM -->
+        <div class="max-w-xl w-full p-6 rounded-lg shadow-xl/30">
+            <h5 class="text-center text-2xl text-gray-800 m-10">Upload Notes</h5>
+            <form method="post" class="flex flex-col">
+                {{ add_notes_form.hidden_tag() }}
+                {{ add_notes_form.note_content.label }}
+                {{ add_notes_form.note_content(class="border border-gray-300 rounded-md p-2") }}
+                {{ add_notes_form.submit(class='rounded-md p-2 transition-colors duration-200 hover:bg-gray-200/60') }}
+            </form>
+        </div>
+
+        <!-- ITEM 2: SEARCH THROUGH NOTES -->
+        <div class="max-w-xl w-full p-6 rounded-lg shadow-xl/30 flex flex-col">
+            <h5 class="text-center text-2xl text-gray-800 m-10">Search-Thru Notes</h5>
+            <!-- If user has added their notes -->
+            {% if notes_text %}
+            <form method="post" class="flex flex-col">
+                {{ search_form.hidden_tag() }}
+
+                <!-- This sends the HTML variable back to Python / To preserve the note_text variable without using session object -->
+                <input type="hidden" name="note_from_html" value="{{ notes_text }}">
+
+                <p class="text-base text-slate-800">Search for text in the notes</p>
+                {{ search_form.text_input(class="border border-gray-300 rounded-md p-2") }}
+                {{ search_form.submit(class='rounded-md p-2 transition-colors duration-200 hover:bg-gray-200/60') }}
+            </form>
+            <!-- If the user has searched through notes -->
+            {% if session.get('similar_sentences') %}
+            <h5 class="text-center text-xl text-gray-800 m-2">Results:</h5>
+            {% for sentence in session['similar_sentences'] %}
+            <div class="p-3 bg-gray-50 border border-gray-200 rounded-md text-gray-700 text-sm shadow-sm">
+                "{{ sentence }}"
+            </div>
+            {% endfor %}
+            {% endif %}
+
+            {% else %}
+            <p class="text-base text-slate-800">No notes were entered.</p>
+
+            {% endif %}
+            <a class="underline hover:text-blue-600 transition-colors duration-800" target="_blank"
+                href="https://chat.openai.com/?q=TEXT: {{ notes_text }} ANSWER REQUEST (BASED ON TEXT): {{ session.get('user_notes_question') }}">
+                Ask ChatGPT
+            </a>
+        </div>
+    </div>
+</div>
+
+{% endblock %}

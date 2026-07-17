@@ -6,8 +6,8 @@ This project will be a Flask App that aids students with organizing and improvin
 ## Features to Add
 - [ ] Document / PDF Scanner
     - [ ] Takes in piece of text or PDF file
-    - [ ] Splits and vectorize every sentence
-    - [ ] Give user certain sentences based on their queries
+    - [x] Splits and vectorize every sentence
+    - [x] Give user certain sentences based on their queries
     - [ ] Show similar sentences / passages / parts
 
 - [x] Grade Tracker

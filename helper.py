@@ -7,9 +7,12 @@ import plotly.graph_objects as go
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler
 from sklearn.svm import SVR
+from sklearn.neighbors import NearestNeighbors
 from google import genai
+from sentence_transformers import SentenceTransformer
 
 client = genai.Client(api_key=os.getenv('GEMINI_API_KEY'))
+transformer = SentenceTransformer('all-MiniLM-L6-v2')
 
 
 def app_context_wrapper(func: callable):
@@ -187,7 +190,17 @@ def get_gemini_response(user_input: str) -> str:
     return interaction.output_text
 
 # Replace with any other LLM if needed
-def prompt_gemini_for_course_advice(course_objects: list[Course]) -> str:
+def prompt_gemini_for_course_advice(course_objects: list[Course]) -> list[str]:
+    """
+    Sends a prompt to a Gemini Model along with data from every one of the user's courses and recieves a response.
+
+    Args:
+        course_objects: A list of the user's courses.
+        
+    Returns:
+        A list with each element holding advice for a course.
+
+    """
     course_prompts = []
     
     if not course_objects:
@@ -211,3 +224,24 @@ def prompt_gemini_for_course_advice(course_objects: list[Course]) -> str:
     response = response.split('CLASS')
 
     return response
+
+# Note Scanner FUNCTIONS
+def get_similar_sentences(text_block: str, user_text: str, amount_of_sentences: int):
+    model = NearestNeighbors(n_neighbors=amount_of_sentences)
+    new_text = text_block.split('.')
+    
+    if len(new_text) == 1:  # If there aren't periods
+        new_text = new_text[0].split('\n')
+
+    embeddings = [transformer.encode(sentence) for sentence in new_text]
+    encoded_user_text = transformer.encode(user_text)
+
+    model.fit(embeddings)
+    distances, indices = model.kneighbors([encoded_user_text])
+    closest_sentences = [new_text[idx] for idx in indices[0]]
+    
+    return closest_sentences
+
+
+
+    

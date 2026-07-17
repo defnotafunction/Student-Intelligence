@@ -208,6 +208,45 @@ def courses():
                             graph_html=graph_html
                             )
 
+@app.route('/note-scanner', methods=['GET', 'POST'])
+@login_required
+def note_scanner():
+    session.permanent = False
+    #if session.get('notes') is None:
+    #    session['notes'] = []
+
+    add_notes_form = AddNotesForm()
+    search_form = BasicSearchForm()
+    notes_text = None
+
+    if add_notes_form.validate_on_submit():
+        return render_template(
+            'note_scanner.html',
+            add_notes_form=add_notes_form,
+            search_form=search_form,
+            notes_text=add_notes_form.note_content.data
+        )
+
+
+    if search_form.validate_on_submit():
+        note_from_html = request.form.get('note_from_html')
+
+        similar_sentences = get_similar_sentences(
+            text_block=note_from_html,
+            user_text=search_form.text_input.data,
+            amount_of_sentences=3
+            )
+        session['similar_sentences'] = similar_sentences
+        session['user_notes_question'] = search_form.text_input.data
+        notes_text = note_from_html
+
+    return render_template(
+        'note_scanner.html',
+        add_notes_form=add_notes_form,
+        search_form=search_form,
+        notes_text=notes_text
+        )
+
 @app.route('/delete-course/<int:course_id>', methods=['POST'])
 @login_required
 def delete_course(course_id: int):
