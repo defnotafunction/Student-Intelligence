@@ -7,7 +7,7 @@
 
         <!-- Item 1: Grades -->
         <div class="max-w-xl w-full p-6 rounded-lg shadow-xl/30">
-            <h5 class="text-center text-2xl text-gray-800 m-10">Grades</h5>
+            <h5 class="text-center font-semibold text-2xl text-gray-800 m-10">Grades</h5>
 
             {% for course in current_courses %}
             <div class="m-5">
@@ -17,7 +17,7 @@
                     <p>Goal: {{ course.grade_goal }}%</p>
                 </div>
                 <form class="max-w-fit" action="{{ url_for('delete_course', course_id=course.id) }}" method="POST"
-                    onclick="return confirm('Are you sure you want to delete this item?');">
+                    onclick="return confirm('Are you sure you want to permanently delete this course?');">
                     {{ delete_course_form.hidden_tag() }}
                     <button type="submit"
                         class="text-xs max-w-fit rounded-md p-2 transition-colors duration-800 hover:text-red-600 hover:bg-gray-200/60">Delete</button>
@@ -30,7 +30,7 @@
 
         <!-- Item 2: Add Courses -->
         <div class="max-w-xl w-full max-h-min p-6 rounded-lg shadow-xl/30">
-            <h5 class="text-center text-2xl text-gray-800 m-10">Add Course</h5>
+            <h5 class="text-center font-semibold text-2xl text-gray-800 m-10">Add Course</h5>
             <form method="post" class="flex flex-col gap-4">
                 {{ add_course_form.hidden_tag() }}
 
@@ -66,8 +66,8 @@
         </div>
 
         <!-- Item 3: Update Course Data -->
-        <div class="max-w-xl w-full p-6 rounded-lg shadow-xl/30">
-            <h5 class="text-center text-2xl text-gray-800 m-10">Update Course</h5>
+        <div class="max-w-xl w-full max-h-xl p-6 rounded-lg shadow-xl/30">
+            <h5 class="text-center font-semibold text-2xl text-gray-800 m-10">Update Course</h5>
             <form method="POST">
                 <select name="update_course_id"
                     class="w-full rounded-md border border-gray-300 bg-white p-2 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500">
@@ -82,15 +82,20 @@
             </form>
 
             {% if dropdown_update_course %}
+            <!-- Creating Abbreviation -->
+            {% set course_abbreviation = dropdown_update_course.name.split(' ') %}
+            {% set course_abbreviation = course_abbreviation | map(attribute='0') | list %}
+            {% set course_abbreviation = "".join(course_abbreviation) %}
+
             <form method="POST" class="flex flex-col">
                 <h5 class="text-center text-l text-gray-800 m-5">{{dropdown_update_course.name}}</h5>
                 <input type="hidden" name="update_course_id" value="{{ dropdown_update_course.id }}">
                 {{ update_course_form.hidden_tag() }}
 
-                {{ update_course_form.new_grade.label }}
+                {{ update_course_form.new_grade.label }} ({{ course_abbreviation }})
                 <span>{{ update_course_form.new_grade(class="border border-gray-300 rounded-md p-2") }} %</span>
 
-                {{ update_course_form.grade_goal.label }}
+                {{ update_course_form.grade_goal.label }} ({{ course_abbreviation }})
                 <span>{{ update_course_form.grade_goal(class="border border-gray-300 rounded-md p-2") }} %</span>
 
 
@@ -98,12 +103,31 @@
                 }}
 
             </form>
+            <div class="overflow-auto max-h-24">
+                {% for grade in dropdown_update_course.grades %}
+                <div class="m-5">
+                    <div class="bg-white border border-gray-300 rounded-md p-2">
+                        <p class="text-base text-slate-800 font-semibold">Grade - {{ grade.percentage }}% ({{
+                            course_abbreviation }}):
+                            {{grade.date_created}}</p>
+                        <form method="POST" action="{{ url_for('delete_grade', grade_id=grade.id) }}"
+                            class="flex flex-col">
+                            {{ delete_grade_form.hidden_tag() }}
+                            <button type="submit"
+                                onclick="return confirm('Are you sure you want to permanently delete this course?');"
+                                class="text-xs max-w-fit rounded-md p-2 transition-colors duration-800 hover:text-red-600 hover:bg-gray-200/60">Delete</button>
+                        </form>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+
             {% endif %}
         </div>
 
         <!-- Item 4: Graphing Courses -->
         <div class="max-w-xl w-full p-6 rounded-lg shadow-xl/30">
-            <h5 class="text-center text-2xl text-gray-800 m-10">Graph Grades</h5>
+            <h5 class="text-center font-semibold text-2xl text-gray-800 m-10">Graph Grades</h5>
             <form method="POST">
                 <select name="graph_course_id"
                     class="w-full rounded-md border border-gray-300 bg-white p-2 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500">

@@ -97,7 +97,10 @@ def dashboard():
     # Recommending videos based on difference of course grade and its goal (How far it is from goal)
     if list(current_user.courses):
         lowest_grade_course = max(current_user.courses, key=lambda x: x.grade_goal - x.grade)
-        results = query_youtube(f"{lowest_grade_course.name} help lessons")
+        results = query_youtube(
+            query=f"{lowest_grade_course.name} help lessons",
+            num_results=4
+                                 )
         result_links = ['https://youtube.com/embed/' + r['id'] for r in results]
 
     # Giving user tips based on goals
@@ -112,7 +115,6 @@ def dashboard():
     if latest_course_advice:
         course_advice = session.get('latest_course_advice')
 
-
     return render_template(
         'dashboard.html',
         made_graphs=made_graphs,
@@ -121,12 +123,10 @@ def dashboard():
         load_advice_form=load_advice_form
         )    
         
-    
-
-
 @app.route('/courses', methods=['GET', 'POST'])
 @login_required
 def courses():
+    delete_grade_form = DeleteGradeForm()
     delete_course_form = DeleteCourseForm()
     add_course_form = AddCourseForm()
     update_course_form = UpdateCourseForm()
@@ -206,7 +206,8 @@ def courses():
                             delete_course_form=delete_course_form,
                             dropdown_update_course=dropdown_update_course,
                             update_course_form=update_course_form,
-                            graph_html=graph_html
+                            graph_html=graph_html,
+                            delete_grade_form=delete_grade_form
                             )
 
 @app.route('/note-scanner', methods=['GET', 'POST'])
@@ -272,6 +273,15 @@ def note_scanner():
 def delete_course(course_id: int):
     course_to_delete = db.session.get(Course, course_id)
     current_user.courses.remove(course_to_delete)
+    db.session.commit()
+
+    return redirect(url_for('courses'))
+
+@app.route('/delete-grade/<int:grade_id>', methods=['POST'])
+@login_required
+def delete_grade(grade_id: int):
+    grade_to_delete = db.session.get(Grade, grade_id)
+    current_user.courses.grades.remove(grade_to_delete)
     db.session.commit()
 
     return redirect(url_for('courses'))

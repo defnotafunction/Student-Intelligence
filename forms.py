@@ -53,3 +53,6 @@ class BasicSearchForm(FlaskForm):
     text_input = StringField(validators=[DataRequired()])
     submit = SubmitField('Search')
 
+class DeleteGradeForm(FlaskForm):
+    """Form used in the Courses route."""
+    submit = SubmitField('Delete')

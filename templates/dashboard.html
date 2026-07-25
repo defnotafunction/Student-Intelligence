@@ -3,8 +3,8 @@
 <h3 class="text-left text-4xl text-gray-800 m-10">Dashboard</h3>
 
 <div class="mx-auto p-8">
-    <div class="max-w-5/6 w-fit p-6 rounded-lg shadow-xl/30 flex flex-col">
-        <h5 class="text-left text-2xl text-gray-800 m-10">Advice</h3>
+    <div class="max-w-5/6 w-fit p-6 rounded-lg shadow-xl/30 p-6 bg-white rounded-lg flex flex-col">
+        <h5 class="text-left font-semibold text-2xl text-gray-800 m-10">Advice</h3>
             {% if course_tips %}
 
             {% for tip in course_tips %}
@@ -19,10 +19,10 @@
                 }}
             </form>
     </div>
-    <div class="grid grid-cols-2 grid-rows-3 gap-4 p-8 items-start">
+    <div class="grid grid-cols-2 gap-4 p-8 items-start">
         <!-- Item 1: Course Progress -->
-        <div class="w-full p-6 rounded-lg shadow-xl/30">
-            <h5 class="text-center text-2xl text-gray-800 m-10">Progress</h5>
+        <div class="w-full p-6 rounded-lg shadow-xl/30 p-6 bg-white rounded-lg">
+            <h5 class="text-center font-semibold text-2xl text-gray-800 m-10">Progress</h5>
             <div class="grid grid-cols-2 gap-6 p-8">
                 {% for graph in made_graphs %}
                 <div
@@ -34,13 +34,14 @@
         </div>
 
         <!-- Item 2: Recommended Youtube Videos -->
-        <div class="max-w-xl w-full p-6 rounded-lg shadow-xl/30">
-            <h5 class="text-center text-2xl text-gray-800 m-10">Recommended Videos</h5>
-            <div class="flex flex-col gap-2 items-center">
+        <div class="w-full h-full p-6 bg-white rounded-lg shadow-xl/30 flex flex-col box-border">
+            <h5 class="text-center text-2xl font-semibold text-gray-800 mb-6 shrink-0">Recommended Videos</h5>
+
+            <div class="grid grid-cols-2 grid-rows-2 gap-4 flex-1 min-h-0">
                 {% for video_link in recommended_videos %}
-                <div class="w-full h-[400px] overflow-hidden flex justify-center">
-                    <iframe width="420" height="315" src="{{video_link}}">
-                    </iframe>
+                <div class="w-full h-full relative overflow-hidden rounded-lg shadow-sm">
+                    <iframe class="absolute top-0 left-0 w-full h-full" src="{{video_link}}" frameborder="0"
+                        allowfullscreen></iframe>
                 </div>
                 {% endfor %}
             </div>

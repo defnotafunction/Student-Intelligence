@@ -1,5 +1,4 @@
 from sqlalchemy import select
-from flask_caching import Cache
 from models import *
 from extension import * 
 from werkzeug.security import generate_password_hash
@@ -13,7 +12,6 @@ from sentence_transformers import SentenceTransformer
 
 client = genai.Client(api_key=os.getenv('GEMINI_API_KEY'))
 transformer = SentenceTransformer('all-MiniLM-L6-v2')
-
 
 def app_context_wrapper(func: callable):
     def inner(*args, **kwargs):        
@@ -228,12 +226,26 @@ def prompt_gemini_for_course_advice(course_objects: list[Course]) -> list[str]:
 
 # Note Scanner FUNCTIONS
 def get_similar_sentences(text_block: str, user_text: str, amount_of_sentences: int):
+    """
+        Splits the sentences, embeds them, and returns the ones closest to the embedded user_text argument
+    
+        Args:
+            text_block: A string of text.
+            user_text: String that'll be used to find the most similar ones.
+            amount_of_sentences: An integer that determines how many similar sentences to return.
+
+        Returns:
+            A list with the sentences most similar to user_text.
+    
+    """
+    
     model = NearestNeighbors(n_neighbors=amount_of_sentences)
     new_text = text_block.split('.')
 
     if len(new_text) == 1:  # If there aren't periods
         new_text = new_text[0].split('\n')
-    elif len(new_text) >= 50:
+
+    elif len(new_text) >= 50:  # Convert into paragraphs (4 sentences) instead of block of text is large.
         condensed_new_text = []
         counter = 0
         new_string = ""

@@ -5,8 +5,8 @@
 <div class="mx-auto p-8">
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 w-full gap-4 p-8 items-start">
         <!-- ITEM 1: ADD NOTES FORM -->
-        <div class="max-w-xl w-full p-6 rounded-lg shadow-xl/30">
-            <h5 class="text-center text-2xl text-gray-800 m-10">Upload Notes</h5>
+        <div class="max-w-xl w-full p-6 rounded-lg shadow-xl/30 p-6 bg-white rounded-lg">
+            <h5 class="text-center font-semibold text-2xl text-gray-800 m-10">Upload Notes</h5>
             <form method="post" class="flex flex-col" enctype="multipart/form-data">
                 {{ add_notes_form.hidden_tag() }}
                 {{ add_notes_form.note_content.label }}
@@ -23,8 +23,8 @@
         </div>
 
         <!-- ITEM 2: SEARCH THROUGH NOTES -->
-        <div class="max-w-xl w-full p-6 rounded-lg shadow-xl/30 flex flex-col">
-            <h5 class="text-center text-2xl text-gray-800 m-10">Search-Thru Notes</h5>
+        <div class="max-w-xl w-full p-6 rounded-lg shadow-xl/30 p-6 bg-white rounded-lg flex flex-col">
+            <h5 class="text-center font-semibold text-2xl text-gray-800 m-10">Search-Thru Notes</h5>
             <!-- If user has added their notes -->
             {% if notes_text %}
             <form method="post" class="flex flex-col">
