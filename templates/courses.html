@@ -88,7 +88,7 @@
             {% set course_abbreviation = "".join(course_abbreviation) %}
 
             <form method="POST" class="flex flex-col">
-                <h5 class="text-center text-l text-gray-800 m-5">{{dropdown_update_course.name}}</h5>
+                <h5 class="text-center text-l text-gray-800 m-5 font-semibold">{{dropdown_update_course.name}}</h5>
                 <input type="hidden" name="update_course_id" value="{{ dropdown_update_course.id }}">
                 {{ update_course_form.hidden_tag() }}
 
@@ -103,23 +103,26 @@
                 }}
 
             </form>
-            <div class="overflow-auto max-h-24">
-                {% for grade in dropdown_update_course.grades %}
-                <div class="m-5">
-                    <div class="bg-white border border-gray-300 rounded-md p-2">
-                        <p class="text-base text-slate-800 font-semibold">Grade - {{ grade.percentage }}% ({{
-                            course_abbreviation }}):
-                            {{grade.date_created}}</p>
-                        <form method="POST" action="{{ url_for('delete_grade', grade_id=grade.id) }}"
-                            class="flex flex-col">
-                            {{ delete_grade_form.hidden_tag() }}
-                            <button type="submit"
-                                onclick="return confirm('Are you sure you want to permanently delete this course?');"
-                                class="text-xs max-w-fit rounded-md p-2 transition-colors duration-800 hover:text-red-600 hover:bg-gray-200/60">Delete</button>
-                        </form>
+            <div class="mt-4 border border-gray-300 rounded-md p-2">
+                <h5 class="text-center text-l text-gray-800 m-5">{{ course_abbreviation }} Recorded Grades</h5>
+                <div class="overflow-auto max-h-24">
+                    {% for grade in dropdown_update_course.grades %}
+                    <div class="m-5">
+                        <div class="bg-white border border-gray-300 rounded-md p-2">
+                            <p class="text-base text-slate-800 font-semibold">Grade - {{ grade.percentage }}%:
+                                {{ grade.date_created.strftime("%m/%d/%Y %I:%M %p") }}</p>
+                            <form method="POST"
+                                action="{{ url_for('delete_grade', course_id=dropdown_update_course.id, grade_id=grade.id) }}"
+                                class="flex flex-col">
+                                {{ delete_grade_form.hidden_tag() }}
+                                <button type="submit"
+                                    onclick="return confirm('Are you sure you want to permanently delete this grade?');"
+                                    class="text-xs max-w-fit rounded-md p-2 transition-colors duration-800 hover:text-red-600 hover:bg-gray-200/60">Delete</button>
+                            </form>
+                        </div>
                     </div>
+                    {% endfor %}
                 </div>
-                {% endfor %}
             </div>
 
             {% endif %}

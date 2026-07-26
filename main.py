@@ -277,11 +277,12 @@ def delete_course(course_id: int):
 
     return redirect(url_for('courses'))
 
-@app.route('/delete-grade/<int:grade_id>', methods=['POST'])
+@app.route('/delete-grade/<int:course_id>/<int:grade_id>', methods=['POST'])
 @login_required
-def delete_grade(grade_id: int):
+def delete_grade(course_id: int, grade_id: int):
+    course_of_grade = db.session.get(Course, course_id)
     grade_to_delete = db.session.get(Grade, grade_id)
-    current_user.courses.grades.remove(grade_to_delete)
+    course_of_grade.grades.remove(grade_to_delete)
     db.session.commit()
 
     return redirect(url_for('courses'))
