@@ -23,7 +23,6 @@ This project will be a Flask App that aids students with organizing and improvin
 - docs/ - project notes, planning, and documentation
 - static - CSS files
 - templates - HTML files
-- requirements.txt - Python dependencies
 
 ## Stack to Use
 - Flask (Backend)

@@ -1,5 +1,5 @@
 from flask_wtf import FlaskForm
-from wtforms import StringField, PasswordField, SubmitField, TextAreaField, IntegerField, DecimalField, FileField
+from wtforms import StringField, PasswordField, SubmitField, TextAreaField, IntegerField, DecimalField, FileField, DateField
 from wtforms.validators import DataRequired, Length, NumberRange, Optional
 from flask_wtf.file import FileAllowed
 
@@ -56,3 +56,17 @@ class BasicSearchForm(FlaskForm):
 class DeleteGradeForm(FlaskForm):
     """Form used in the Courses route."""
     submit = SubmitField('Delete')
+
+class SchoolYearForm(FlaskForm):
+    """Form used in the Settings route."""
+    start_date = DateField(
+        'First Day of School',
+        format='%Y-%m-%d',
+        validators=[DataRequired()]
+    )
+    end_date = DateField(
+        'Last day of School',
+        format='%Y-%m-%d',
+        validators=[DataRequired()]
+    )
+    submit = SubmitField('Submit')

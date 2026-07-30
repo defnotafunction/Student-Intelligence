@@ -12,7 +12,6 @@ from extension import *
 import io
 from pypdf import PdfReader
 
-
 login_manager = LoginManager()
 login_manager.login_view = 'login'
 
@@ -89,6 +88,8 @@ def dashboard():
             title=course.name,
             datetimes=datetimes,
             grades=grades,
+            school_start_date=current_user.start_of_school_date,
+            school_end_time=current_user.end_of_school_date,
             grade_goal=course.grade_goal,
             days_into_future=20,
             )
@@ -142,7 +143,6 @@ def courses():
         if dropdown_graph_course_id is None:
             dropdown_graph_course_id = current_user.courses[0].id
        
-
     graph_html = None
     # ITEM 2 ADD COURSE
     if add_course_form.validate_on_submit():
@@ -290,6 +290,23 @@ def delete_grade(course_id: int, grade_id: int):
 @app.route('/contact')
 def contact():
     return render_template('contact.html')
+
+@app.route('/settings', methods=['GET', 'POST'])
+@login_required
+def settings():
+    school_year_form = SchoolYearForm()
+
+    if school_year_form.validate_on_submit():
+        current_user.start_of_school_date = school_year_form.start_date.data
+        current_user.end_of_school_date = school_year_form.end_date.data
+        db.session.commit()
+
+    # Set default values which allow user to see their current school year dates
+    if request.method == 'GET':
+        school_year_form.start_date.data = current_user.start_of_school_date
+        school_year_form.end_date.data = current_user.end_of_school_date
+
+    return render_template('settings.html', school_year_form=school_year_form)
 
 if __name__ == '__main__':
     with app.app_context():

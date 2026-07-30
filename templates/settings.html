@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h3 class="text-left text-4xl text-gray-800 m-10">Settings</h3>
+
+<div class="mx-auto p-8">
+    <div class="max-w-5/6 w-fit p-6 rounded-lg shadow-xl/30 p-6 bg-white rounded-lg flex flex-col">
+        <form method="POST" class="flex flex-col">
+            <h5 class="text-center text-l text-gray-800 m-5 font-semibold">School Schedule</h5>
+            {{ school_year_form.hidden_tag() }}
+
+            {{ school_year_form.start_date.label }}
+            {{ school_year_form.start_date() }}
+
+            {{ school_year_form.end_date.label }}
+            {{ school_year_form.end_date() }}
+
+            {{ school_year_form.submit(class='rounded-md p-2 transition-colors duration-200 hover:bg-gray-200/60')
+            }}
+
+        </form>
+    </div>
+</div>
+{% endblock %}

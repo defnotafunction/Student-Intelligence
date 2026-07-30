@@ -1,6 +1,7 @@
 from sqlalchemy import select
 from models import *
-from extension import * 
+from extension import *
+from datetime import timedelta
 from werkzeug.security import generate_password_hash
 import plotly.graph_objects as go
 from sklearn.pipeline import Pipeline
@@ -74,7 +75,12 @@ def create_grades_vs_time(title: str, datetimes: list[datetime], grades: list[fl
 
     return graph_html
 
-def predict_grades_from_datetimes(datetimes: list[datetime], grades: list[float], days_into_future: int) -> list[float]:
+def predict_grades(datetimes: list[datetime],
+                    start_of_school_date: datetime,
+                    end_of_school_date: datetime,
+                    grades: list[float],
+                    days_into_future: int
+                    ) -> list[float]:
     """
     Predicts future grades by fitting datetimes and grades data to a Support Vector Regression model.
 
@@ -83,33 +89,82 @@ def predict_grades_from_datetimes(datetimes: list[datetime], grades: list[float]
 
     Args:
         datetimes: A list of datetime objects.
+        start_of_school_date: A datetime object containing the first day of the user's school year.
+        end_of_school_date: A datetime object containing the last day of the user's school year.
         grades: A list of floating point values within the range of 0-inf.
         days_into_future: An integer that determines how many future days the model will predict for.
 
     Returns:
-        A list of floating point values.
+        A list of the model's predictions as floating point values.
 
     """
-
+    # FEATURE ENGINEERING
     min_date = min(datetimes)
     days_from_min = sorted([(d - min_date).total_seconds() / 86400 for d in datetimes])
     future_days = [days_from_min[-1] + i for i in range(1, days_into_future)]
 
-    nested_days_from_min = [[d] for d in days_from_min]
-    nested_future_days = [[d] for d in future_days]
+    days_from_min = [d for d in days_from_min]
+    future_days = [d for d in future_days]
 
+    # Split time from start_of_school_date to end_of_school_date into
+    #  4 equal parts to add quarters of the school year as a feature 
+    duration_of_school = end_of_school_date - start_of_school_date
+    quarter_of_school = duration_of_school / 4
+    dividers = [start_of_school_date + (quarter_of_school * i) for i in range(3)]  # Three dividers to divide the 4 quarters
+
+    def create_examples(list_of_days: list[int]) -> list[int]:
+        examples = []
+
+        for day in list_of_days:
+            day_datetime = min_date + timedelta(days=day)
+
+            # One hot encode quarters
+            if start_of_school_date <= day_datetime < dividers[0]:  # Datetimes should be parallel to the days_from_min list
+                one_hot_quarter = [1, 0, 0, 0]
+                examples.append([day, *one_hot_quarter])
+    
+            elif dividers[0] <= day_datetime < dividers[1]:
+                one_hot_quarter = [0, 1, 0, 0]
+                examples.append([day, *one_hot_quarter])
+    
+            elif dividers[1] <= day_datetime < dividers[2]:
+                one_hot_quarter = [0, 0, 1, 0]
+                examples.append([day, *one_hot_quarter])
+    
+            elif dividers[2] <= day_datetime < end_of_school_date:
+                one_hot_quarter = [0, 0, 0, 1]
+                examples.append([day, *one_hot_quarter])
+
+            else:
+                one_hot_quarter = [0, 0, 0, 0]
+                examples.append([day, *one_hot_quarter])
+
+        return examples
+
+    future_inputs = create_examples(future_days)
+    examples = create_examples(days_from_min)
+    
+    # CREATING / FITTING MODEL
     model_pipeline = Pipeline(steps=[
-        ('spline', StandardScaler()),
-        ('regressor', SVR(kernel='rbf', C=500, epsilon=0.1, gamma='scale'))
+        ('scaler', StandardScaler()),
+        ('regressor', SVR(kernel='rbf', C=1000, epsilon=0.1, gamma='scale'))
     ])
-    model_pipeline.fit(nested_days_from_min, grades)
-    current_days_predictions = model_pipeline.predict(nested_days_from_min)
-    future_days_predictions = model_pipeline.predict(nested_future_days)
+    model_pipeline.fit(examples, grades)
+    current_days_predictions = model_pipeline.predict(examples)
+    future_days_predictions = model_pipeline.predict(future_inputs)
     predictions = [*current_days_predictions, *future_days_predictions]
 
     return predictions
 
-def create_grades_vs_time_with_predictions(title: str, datetimes: list[datetime], grades: list[float], grade_goal: int, days_into_future: int) -> str:
+def create_grades_vs_time_with_predictions(
+        title: str,
+        datetimes: list[datetime],
+        grades: list[float],
+        grade_goal: int,
+        school_start_date: datetime,
+        school_end_time: datetime,
+        days_into_future: int
+        ) -> str:
     """
     Creates and returns a graph by using datetimes for the x-axis, using grades for the y-axis, and fitting a Support Vector Regression model.
 
@@ -120,6 +175,8 @@ def create_grades_vs_time_with_predictions(title: str, datetimes: list[datetime]
         datetimes: A list of datetime objects.
         grades: A list of floating point values within the range of 0-inf.
         grade_goal: A floating point value that determines the y-value of the horizontal line that represents the goal of the course.
+        school_start_date: A datetime object that represents the start of the user's school year.
+        school_end_date: A datetime object that represents the end of a the user's school year.
         days_into_future: An integer that determines how many future days the model will predict for.
 
     Returns:
@@ -133,7 +190,13 @@ def create_grades_vs_time_with_predictions(title: str, datetimes: list[datetime]
     min_date = min(datetimes)
     days_from_min =  sorted([(d - min_date).total_seconds() / 86400 for d in datetimes])  # Convert seconds into days
     
-    predictions = predict_grades_from_datetimes(datetimes, grades, days_into_future)
+    predictions = predict_grades(
+        datetimes=datetimes,
+        grades=grades,
+        days_into_future=days_into_future,
+        start_of_school_date=school_start_date,
+        end_of_school_date=school_end_time
+        )
     
     fig = go.Figure(data=go.Scatter(
         x=days_from_min,
@@ -217,7 +280,7 @@ def prompt_gemini_for_course_advice(course_objects: list[Course]) -> list[str]:
                 """
         course_prompts.append(prompt)
     
-    final_prompt = "\n".join(course_prompts) + "Respond in this format 'CLASS (Class Name): (Advice)'"
+    final_prompt = "\n".join(course_prompts) + "Respond in this format 'CLASS (Class Name): (Advice)'. At the beginning of your response, tell me what class to priortize in the format 'CLASS OVERALL: (your advice)'"
 
     response = get_gemini_response(final_prompt)
     response = response.split('CLASS')
@@ -271,7 +334,3 @@ def get_similar_sentences(text_block: str, user_text: str, amount_of_sentences: 
     closest_sentences = [new_text[idx] for idx in indices[0]]
     
     return closest_sentences
-
-
-
-    
