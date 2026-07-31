@@ -5,11 +5,9 @@ from flask import render_template, redirect, url_for, flash, request, session
 from flask_login import LoginManager, current_user, login_user, logout_user, login_required
 from werkzeug.security import check_password_hash
 from sqlalchemy import select
-import os
 from forms import *
 from helper import *
 from extension import *
-import io
 from pypdf import PdfReader
 
 login_manager = LoginManager()

@@ -103,9 +103,6 @@ def predict_grades(datetimes: list[datetime],
     days_from_min = sorted([(d - min_date).total_seconds() / 86400 for d in datetimes])
     future_days = [days_from_min[-1] + i for i in range(1, days_into_future)]
 
-    days_from_min = [d for d in days_from_min]
-    future_days = [d for d in future_days]
-
     # Split time from start_of_school_date to end_of_school_date into
     #  4 equal parts to add quarters of the school year as a feature 
     duration_of_school = end_of_school_date - start_of_school_date
@@ -119,7 +116,7 @@ def predict_grades(datetimes: list[datetime],
             day_datetime = min_date + timedelta(days=day)
 
             # One hot encode quarters
-            if start_of_school_date <= day_datetime < dividers[0]:  # Datetimes should be parallel to the days_from_min list
+            if start_of_school_date <= day_datetime < dividers[0]:
                 one_hot_quarter = [1, 0, 0, 0]
                 examples.append([day, *one_hot_quarter])
     

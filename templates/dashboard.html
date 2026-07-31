@@ -19,11 +19,11 @@
                 }}
             </form>
     </div>
-    <div class="grid grid-cols-2 gap-4 p-8 items-start">
+    <div class="grid sm:grid-cols-1 md:grid-cols-2 gap-4 p-8 items-start">
         <!-- Item 1: Course Progress -->
         <div class="w-full p-6 rounded-lg shadow-xl/30 p-6 bg-white rounded-lg">
             <h5 class="text-center font-semibold text-2xl text-gray-800 m-10">Progress</h5>
-            <div class="grid grid-cols-2 gap-6 p-8">
+            <div class="grid sm:grid-cols-1 md:grid-cols-2 gap-6 p-8">
                 {% for graph in made_graphs %}
                 <div
                     class="border border-gray-300 rounded-md p-2 w-full h-[400px] overflow-hidden [&_div]:!w-full [&_svg]:!w-full [&_canvas]:!w-full">
@@ -34,12 +34,12 @@
         </div>
 
         <!-- Item 2: Recommended Youtube Videos -->
-        <div class="w-full h-full p-6 bg-white rounded-lg shadow-xl/30 flex flex-col box-border">
+        <div class="w-full p-6 bg-white rounded-lg shadow-xl/30 flex flex-col box-border">
             <h5 class="text-center text-2xl font-semibold text-gray-800 mb-6 shrink-0">Recommended Videos</h5>
 
-            <div class="grid grid-cols-2 grid-rows-2 gap-4 flex-1 min-h-0">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {% for video_link in recommended_videos %}
-                <div class="w-full h-full relative overflow-hidden rounded-lg shadow-sm">
+                <div class="w-full aspect-video relative overflow-hidden rounded-lg shadow-sm">
                     <iframe class="absolute top-0 left-0 w-full h-full" src="{{video_link}}" frameborder="0"
                         allowfullscreen></iframe>
                 </div>
