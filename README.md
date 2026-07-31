@@ -1,13 +1,11 @@
 # Student Intelligence
 Student Intelligence is a Flask app that aids students with organizing and improving their school lives.
 
-## Features
-- Authentication and Authorization - Secure user sign up and login using `Flask-SQLAlchemy` and `flask-login`.
-- Database - Relational database that uses `Flask-SQLAlchemy` to store users, and information about their courses and grades.
-- Frontend - Built with HTML, CSS, and Jinja2.
-- Backend - Flask + Python handles users, API requests, routes, and logic.
+## Core Features
+- Course Creation - Users can create, alter, and delete courses.
 - Grade Tracking - Saves and graphs grades of user's courses, and their goal to reach for their courses. Uses Support Vector Regressor to predict future grades, powered by `scikit-learn`.
-- Course Assistance - Uses Gemini API, custom tools, and YouTube recommendations for advice and help with courses.
+- Course Assistance - Uses Gemini API, custom tools, and YouTube video recommendations for advice and help with courses.
+
 
 ## Project Structure
 
@@ -27,6 +25,16 @@ Student Intelligence/
 │   └── src/
 └── templates/              # Jinja2 templates for rendered HTML pages
 ```
+
+## Stack
+- Python 3
+- pypdf
+- python-dotenv
+- Routing, Forms, Database: Flask, Flask-SQLAlchemy, Flask-WTF, WTForms
+- Authentication: Werkzeug, Flask-Login
+- Data Visualization: Plotly
+- ML/AI: scikit-learn, sentence-transformers, google-genai
+- Frontend: HTML / CSS / Jinja2
 
 ## License
 This project is not available for public use or distribution.
