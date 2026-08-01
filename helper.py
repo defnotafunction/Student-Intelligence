@@ -3,16 +3,10 @@ from models import *
 from extension import *
 from datetime import timedelta
 from werkzeug.security import generate_password_hash
-import plotly.graph_objects as go
-from sklearn.pipeline import Pipeline
-from sklearn.preprocessing import StandardScaler
-from sklearn.svm import SVR
 from google import genai
-import spacy
-import en_core_web_md
 
 client = genai.Client(api_key=os.getenv('GEMINI_API_KEY'))
-nlp = en_core_web_md.load()
+
 
 def app_context_wrapper(func: callable):
     def inner(*args, **kwargs):        
@@ -54,7 +48,8 @@ def create_grades_vs_time(title: str, datetimes: list[datetime], grades: list[fl
         A string with the HTML representation of the created graph.
 
     """
-
+    import plotly.graph_objects as go
+    
     if len(datetimes) < 1:
         return None
     
@@ -98,6 +93,11 @@ def predict_grades(datetimes: list[datetime],
         A list of the model's predictions as floating point values.
 
     """
+    # Lazy importing
+    from sklearn.pipeline import Pipeline
+    from sklearn.preprocessing import StandardScaler
+    from sklearn.svm import SVR
+
     # FEATURE ENGINEERING
     min_date = min(datetimes)
     days_from_min = sorted([(d - min_date).total_seconds() / 86400 for d in datetimes])
@@ -180,10 +180,11 @@ def create_grades_vs_time_with_predictions(
         A string with the HTML representation of the created graph.
 
     """
+    import plotly.graph_objects as go
 
     if len(datetimes) < 1:
         return None
-    
+
     min_date = min(datetimes)
     days_from_min =  sorted([(d - min_date).total_seconds() / 86400 for d in datetimes])  # Convert seconds into days
     
@@ -298,7 +299,10 @@ def get_similar_sentences(text_block: str, user_text: str, amount_of_sentences: 
             A list with the sentences most similar to user_text.
     
     """
-    
+    import spacy
+    import en_core_web_md
+    nlp = en_core_web_md.load()
+
     new_text = text_block.split('.')
 
     if len(new_text) == 1:  # If there aren't periods
