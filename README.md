@@ -3,7 +3,7 @@ Student Intelligence is a Flask app that aids students with organizing and impro
 
 ## Core Features
 - Course Creation - Users can create, alter, and delete courses.
-- Grade Tracking - Saves and graphs grades of user's courses, and their goal to reach for their courses. Uses Support Vector Regressor to predict future grades, powered by `scikit-learn`.
+- Grade Tracking - Saves and graphs grades of user's courses, and their goal to reach for their courses. Uses Support Vector Regresson to predict future grades, powered by `scikit-learn`.
 - Course Assistance - Uses Gemini API, custom tools, and YouTube video recommendations for advice and help with courses.
 
 
