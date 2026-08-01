@@ -9,10 +9,10 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.svm import SVR
 from google import genai
 import spacy
-import en_core_web_sm
+import en_core_web_md
 
 client = genai.Client(api_key=os.getenv('GEMINI_API_KEY'))
-nlp = en_core_web_sm.load()
+nlp = en_core_web_md.load()
 
 def app_context_wrapper(func: callable):
     def inner(*args, **kwargs):        
