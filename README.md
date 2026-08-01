@@ -40,4 +40,4 @@ Student Intelligence/
 This project is not available for public use or distribution.
 
 ## Additional Information
-Website will be up soon.
+Website: https://studentintelligence.onrender.com/
