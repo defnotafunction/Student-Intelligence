@@ -24,7 +24,7 @@
 
         <!-- ITEM 2: SEARCH THROUGH NOTES -->
         <div class="max-w-xl w-full p-6 rounded-lg shadow-xl/30 p-6 bg-white rounded-lg flex flex-col">
-            <h5 class="text-center font-semibold text-2xl text-gray-800 m-10">Search-Thru Notes</h5>
+            <h5 class="text-center font-semibold text-2xl text-gray-800 m-10">Smart Search</h5>
             <!-- If user has added their notes -->
             {% if notes_text %}
             <form method="post" class="flex flex-col">
@@ -33,7 +33,7 @@
                 <!-- This sends the HTML variable back to Python / To preserve the note_text variable without using session object -->
                 <input type="hidden" name="note_from_html" value="{{ notes_text }}">
 
-                <p class="text-base text-slate-800">Search for text in the notes</p>
+                <p class="text-base text-slate-800">Search for similar text in the notes</p>
                 {{ search_form.text_input(class="border border-gray-300 rounded-md p-2") }}
                 {{ search_form.submit(class='rounded-md p-2 transition-colors duration-200 hover:bg-gray-200/60') }}
             </form>
