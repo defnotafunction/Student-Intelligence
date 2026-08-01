@@ -7,12 +7,12 @@ import plotly.graph_objects as go
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler
 from sklearn.svm import SVR
-from sklearn.neighbors import NearestNeighbors
 from google import genai
-from sentence_transformers import SentenceTransformer
+import spacy
+import en_core_web_md
 
 client = genai.Client(api_key=os.getenv('GEMINI_API_KEY'))
-transformer = SentenceTransformer('all-MiniLM-L6-v2')
+nlp = en_core_web_md.load()
 
 def app_context_wrapper(func: callable):
     def inner(*args, **kwargs):        
@@ -299,7 +299,6 @@ def get_similar_sentences(text_block: str, user_text: str, amount_of_sentences: 
     
     """
     
-    model = NearestNeighbors(n_neighbors=amount_of_sentences)
     new_text = text_block.split('.')
 
     if len(new_text) == 1:  # If there aren't periods
@@ -323,11 +322,12 @@ def get_similar_sentences(text_block: str, user_text: str, amount_of_sentences: 
 
     amount_of_sentences = min(amount_of_sentences, len(new_text))  # Avoid n_neighbors > n_samples_fit error
 
-    embeddings = [transformer.encode(sentence) for sentence in new_text]
-    encoded_user_text = transformer.encode(user_text)
+    sentence_docs = [nlp(sentence) for sentence in new_text]
+    user_doc = nlp(user_text)
 
-    model.fit(embeddings)
-    distances, indices = model.kneighbors([encoded_user_text])
-    closest_sentences = [new_text[idx] for idx in indices[0]]
+    most_to_least_similar_sentences = sorted(sentence_docs, reverse=True, key=lambda x: user_doc.similarity(x))
+    closest_sentences = most_to_least_similar_sentences[:3]
+
+    closest_sentences = list(map(str, closest_sentences))
     
     return closest_sentences

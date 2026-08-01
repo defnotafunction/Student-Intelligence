@@ -103,8 +103,13 @@ def dashboard():
 
     # Giving user tips based on goals
     if load_advice_form.is_submitted():
-        course_advice = prompt_gemini_for_course_advice(current_user.courses)
+        try:
+            course_advice = prompt_gemini_for_course_advice(current_user.courses)
+        except:
+            course_advice = 'Please try again later.'  # In case RPM is exceeding RPM limit
+
         session['latest_course_advice'] = course_advice  # To prevent wasting API requests
+            
 
     if course_advice is None:
         course_advice = ['You have no courses.']
