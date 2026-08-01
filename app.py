@@ -93,7 +93,7 @@ def dashboard():
         made_graphs.append(graph_html)
 
     # Recommending videos based on difference of course grade and its goal (How far it is from goal)
-    if list(current_user.courses):
+    if current_user.courses:
         lowest_grade_course = max(current_user.courses, key=lambda x: x.grade_goal - x.grade)
         results = query_youtube(
             query=f"{lowest_grade_course.name} help lessons",
@@ -138,7 +138,7 @@ def courses():
     dropdown_graph_course_id = request.form.get('graph_course_id')
     
     # Default update form / graph that'll pop up if user didn't select
-    if len(list(current_user.courses)) >= 1:
+    if len(current_user.courses) >= 1:
         if dropdown_update_course_id is None:
             dropdown_update_course_id = current_user.courses[0].id
 
@@ -170,6 +170,8 @@ def courses():
         current_user.courses.append(new_course)
         db.session.commit()
 
+        return redirect('courses')
+
     # ITEM 3: UPDATE COURSE
     if dropdown_update_course_id:
         dropdown_update_course = db.session.get(Course, dropdown_update_course_id)
@@ -189,6 +191,7 @@ def courses():
             dropdown_graph_course.grade_goal = new_grade_goal
 
         db.session.commit()
+        return redirect('courses')
     
     # ITEM 4: GRAPH COURSE
     if dropdown_graph_course_id:
@@ -274,17 +277,18 @@ def note_scanner():
 @login_required
 def delete_course(course_id: int):
     course_to_delete = db.session.get(Course, course_id)
-    current_user.courses.remove(course_to_delete)
+
+    db.session.delete(course_to_delete)
     db.session.commit()
 
     return redirect(url_for('courses'))
 
-@app.route('/delete-grade/<int:course_id>/<int:grade_id>', methods=['POST'])
+@app.route('/delete-grade/<int:grade_id>', methods=['POST'])
 @login_required
-def delete_grade(course_id: int, grade_id: int):
-    course_of_grade = db.session.get(Course, course_id)
+def delete_grade(grade_id: int):
     grade_to_delete = db.session.get(Grade, grade_id)
-    course_of_grade.grades.remove(grade_to_delete)
+
+    db.session.delete(grade_to_delete)
     db.session.commit()
 
     return redirect(url_for('courses'))
@@ -302,6 +306,8 @@ def settings():
         current_user.start_of_school_date = school_year_form.start_date.data
         current_user.end_of_school_date = school_year_form.end_date.data
         db.session.commit()
+
+        return redirect('settings')
 
     # Set default values which allow user to see their current school year dates
     if request.method == 'GET':

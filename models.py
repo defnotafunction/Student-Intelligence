@@ -37,7 +37,7 @@ class User(db.Model, UserMixin):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(20), unique=True, index=True,  nullable=False)
     hashed_password = db.Column(db.String(225),  nullable=False)
-    courses = db.relationship('Course', backref='user', lazy='dynamic', cascade='all, delete-orphan')
+    courses = db.relationship('Course', backref='user', cascade='all, delete-orphan')
     start_of_school_date = db.Column(db.DateTime, default=get_default_school_start_datetime)
     end_of_school_date = db.Column(db.DateTime, default=get_default_school_end_datetime)
 
@@ -49,7 +49,7 @@ class Course(db.Model):
     assessment_weight = db.Column(db.Numeric(precision=5, scale=2), nullable=False)
     practice_weight = db.Column(db.Numeric(precision=5, scale=2), nullable=False)
     grade_goal = db.Column(db.Numeric(precision=5, scale=2), nullable=False)  # Grade to reach
-    grades = db.relationship('Grade', backref='course', lazy='dynamic', cascade='all, delete-orphan')  # Tracks all grade inputs
+    grades = db.relationship('Grade', backref='course', cascade='all, delete-orphan')  # Tracks all grade inputs
 
 class Grade(db.Model):
     id = db.Column(db.Integer, primary_key=True)
