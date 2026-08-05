@@ -112,10 +112,10 @@ def predict_grades(datetimes: list[datetime],
     def create_examples(list_of_days: list[int]) -> list[int]:
         examples = []
 
+        # ONE HOT QUARTERS
         for day in list_of_days:
             day_datetime = min_date + timedelta(days=day)
 
-            # One hot encode quarters
             if start_of_school_date <= day_datetime < dividers[0]:
                 one_hot_quarter = [1, 0, 0, 0]
                 examples.append([day, *one_hot_quarter])
@@ -138,8 +138,29 @@ def predict_grades(datetimes: list[datetime],
 
         return examples
 
+    def append_velocity_feature(examples: list[list]):
+        # LAST KNOWN VELOCITY
+        for example_idx, example in enumerate(examples):
+            if example_idx == 0:
+                examples[example_idx].append(0)
+                continue
+
+            # VELOCITY OF LAST POINT TO CURRENT POINT
+            difference_of_time = float(example[0] - examples[example_idx-1][0])
+            difference_of_grade = float(grades[example_idx] - grades[example_idx-1])
+
+            velocity = difference_of_grade / difference_of_time
+            examples[example_idx].append(velocity)
+
+    # CREATING EXAMPLES
     future_inputs = create_examples(future_days)
     examples = create_examples(days_from_min)
+
+    append_velocity_feature(examples)
+    future_inputs = [[*lst, examples[-1][-1]] for lst in future_inputs]
+
+    print(f'Examples: {examples}')
+    print(f'Future Inputs: {future_inputs}')
     
     # CREATING / FITTING MODEL
     model_pipeline = Pipeline(steps=[
