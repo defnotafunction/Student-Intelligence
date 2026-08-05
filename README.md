@@ -33,7 +33,7 @@ Student Intelligence/
 - Routing, Forms, Database: Flask, Flask-SQLAlchemy, Flask-WTF, WTForms
 - Authentication: Werkzeug, Flask-Login
 - Data Visualization: Plotly
-- ML/AI: scikit-learn, sentence-transformers, google-genai
+- ML/AI: scikit-learn, spaCy, google-genai
 - Frontend: HTML / CSS / Jinja2
 
 ## License
