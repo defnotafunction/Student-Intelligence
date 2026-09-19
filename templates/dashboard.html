@@ -22,13 +22,18 @@
     <div class="grid sm:grid-cols-1 md:grid-cols-2 mt-4 gap-4 md:p-8 items-start">
         <!-- Item 1: Course Progress -->
         <div class="w-full rounded-lg shadow-xl/30 p-6 bg-white rounded-lg">
-            <h5 class="text-center font-semibold text-2xl text-gray-800 m-10">Progress</h5>
+            <h5 class="text-center font-semibold text-2xl text-gray-800 m-10">Progress and Predictions</h5>
+            <p class="text-center text-base text-slate-800 m-3">Note: For a course to have its grade predicted, it must
+                have
+                at least 5 tracked grades</p>
             <div class="grid sm:grid-cols-1 md:grid-cols-2 gap-6">
                 {% for graph in made_graphs %}
+                {% if graph %}
                 <div
                     class="border border-gray-300 rounded-md p-2 w-full h-[400px] overflow-hidden [&_div]:!w-full [&_svg]:!w-full [&_canvas]:!w-full">
                     {{ graph | safe }}
                 </div>
+                {% endif %}
                 {% endfor %}
             </div>
         </div>

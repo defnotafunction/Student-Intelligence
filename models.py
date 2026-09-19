@@ -37,9 +37,11 @@ class User(db.Model, UserMixin):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(20), unique=True, index=True,  nullable=False)
     hashed_password = db.Column(db.String(225),  nullable=False)
-    courses = db.relationship('Course', backref='user', cascade='all, delete-orphan')
     start_of_school_date = db.Column(db.DateTime, default=get_default_school_start_datetime)
     end_of_school_date = db.Column(db.DateTime, default=get_default_school_end_datetime)
+    data_analysis_consent = db.Column(db.Boolean, default=True, nullable=False)  # This enables a user's data to be used (for training predictive models, etc)
+
+    courses = db.relationship('Course', backref='user', cascade='all, delete-orphan')
 
 class Course(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -50,9 +52,10 @@ class Course(db.Model):
     practice_weight = db.Column(db.Numeric(precision=5, scale=2), nullable=False)
     grade_goal = db.Column(db.Numeric(precision=5, scale=2), nullable=False)  # Grade to reach
     grades = db.relationship('Grade', backref='course', cascade='all, delete-orphan')  # Tracks all grade inputs
+    
 
 class Grade(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     course_id = db.Column(db.Integer, db.ForeignKey('course.id'))
-    percentage = db.Column(db.Numeric(precision=5, scale=2), nullable=False)
+    percentage = db.Column(db.Numeric(precision=5, scale=2), nullable=False)  # Number 0-100
     date_created = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))

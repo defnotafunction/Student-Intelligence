@@ -4,9 +4,17 @@ from extension import *
 from datetime import timedelta
 from werkzeug.security import generate_password_hash
 from google import genai
+import torch
+import torch.nn as nn
+import torch.optim as optim
+import numpy as np
+import joblib
+
+torch.manual_seed(42)
+np.random.seed(42)
 
 client = genai.Client(api_key=os.getenv('GEMINI_API_KEY'))
-
+GRADE_FORECASTER_MODEL_PATH = os.path.join('data', 'mlmodels', 'supervised_grade_forecaster.pkl')
 
 def app_context_wrapper(func: callable):
     def inner(*args, **kwargs):        
@@ -70,75 +78,28 @@ def create_grades_vs_time(title: str, datetimes: list[datetime], grades: list[fl
 
     return graph_html
 
-def predict_grades(datetimes: list[datetime],
-                    start_of_school_date: datetime,
-                    end_of_school_date: datetime,
-                    grades: list[float],
-                    days_into_future: int
-                    ) -> list[float]:
+def create_data_for_grade_prediction(
+        datetimes: list[datetime],
+        grades: list[float],
+        start_of_school_date: datetime,
+        end_of_school_date: datetime
+        ) -> tuple[list[list], list[float]]:
     """
-    Predicts future grades by fitting datetimes and grades data to a Support Vector Regression model.
-
-    This function converts the datetimes to the amount of days since the earliest datetime.
-    It then normalizes the data using Z-score normalization before fitting it to a Support Vector Regression model to predict future grades.
-
+    Creates examples with engineered features using datetimes and grades for grade prediction.
+    
     Args:
         datetimes: A list of datetime objects.
-        start_of_school_date: A datetime object containing the first day of the user's school year.
-        end_of_school_date: A datetime object containing the last day of the user's school year.
-        grades: A list of floating point values within the range of 0-inf.
-        days_into_future: An integer that determines how many future days the model will predict for.
-
+        grades: A list of numbers ranging from 0-100.
+        start_of_school_date: A datetime object representing a user's start of their school year's date.
+        end_of_school_date: A datetime object representing a user's end of their school year's date.
+    
     Returns:
-        A list of the model's predictions as floating point values.
-
-    """
-    # Lazy importing
-    from sklearn.pipeline import Pipeline
-    from sklearn.preprocessing import StandardScaler
-    from sklearn.svm import SVR
-
-    # FEATURE ENGINEERING
-    min_date = min(datetimes)
-    days_from_min = sorted([(d - min_date).total_seconds() / 86400 for d in datetimes])
-    future_days = [days_from_min[-1] + i for i in range(1, days_into_future)]
-
-    # Split time from start_of_school_date to end_of_school_date into
-    #  4 equal parts to add quarters of the school year as a feature 
-    duration_of_school = end_of_school_date - start_of_school_date
-    quarter_of_school = duration_of_school / 4
-    dividers = [start_of_school_date + (quarter_of_school * i) for i in range(3)]  # Three dividers to divide the 4 quarters
-
-    def create_examples(list_of_days: list[int]) -> list[int]:
-        examples = []
-
-        # ONE HOT QUARTERS
-        for day in list_of_days:
-            day_datetime = min_date + timedelta(days=day)
-
-            if start_of_school_date <= day_datetime < dividers[0]:
-                one_hot_quarter = [1, 0, 0, 0]
-                examples.append([day, *one_hot_quarter])
-    
-            elif dividers[0] <= day_datetime < dividers[1]:
-                one_hot_quarter = [0, 1, 0, 0]
-                examples.append([day, *one_hot_quarter])
-    
-            elif dividers[1] <= day_datetime < dividers[2]:
-                one_hot_quarter = [0, 0, 1, 0]
-                examples.append([day, *one_hot_quarter])
-    
-            elif dividers[2] <= day_datetime < end_of_school_date:
-                one_hot_quarter = [0, 0, 0, 1]
-                examples.append([day, *one_hot_quarter])
-
-            else:
-                one_hot_quarter = [0, 0, 0, 0]
-                examples.append([day, *one_hot_quarter])
-
-        return examples
+        A list of examples and a list of float values representing grades.
+    """ 
+    examples = []
 
     def append_velocity_feature(examples: list[list]):
+        """Appends the velocity, or rate of change, to the end of every example in examples."""
         # LAST KNOWN VELOCITY
         for example_idx, example in enumerate(examples):
             if example_idx == 0:
@@ -152,36 +113,189 @@ def predict_grades(datetimes: list[datetime],
             velocity = difference_of_grade / difference_of_time
             examples[example_idx].append(velocity)
 
-    # CREATING EXAMPLES
-    future_inputs = create_examples(future_days)
-    examples = create_examples(days_from_min)
+    # Split time from start_of_school_date to end_of_school_date into
+    #  4 equal parts to add quarters of the school year as a feature 
+    def append_one_hot_quarter_features() -> None:
+        """Appends a one hot representation of what quarter the current user is in."""
+        duration_of_school = end_of_school_date - start_of_school_date
+        quarter_of_school = duration_of_school / 4
 
+        dividers = [start_of_school_date + (quarter_of_school * i) for i in range(3)]  # Three dividers to divide the 4 quarters
+        min_date = min(datetimes)
+
+        # ONE HOT QUARTERS
+        for day_datetime in datetimes:
+            days_since_first_record = (day_datetime - min_date).total_seconds() / 86400  # To differentiate grades tracked on the same day
+
+            if start_of_school_date <= day_datetime < dividers[0]:
+                one_hot_quarter = [1, 0, 0, 0]
+                
+            elif dividers[0] <= day_datetime < dividers[1]:
+                one_hot_quarter = [0, 1, 0, 0]
+
+            elif dividers[1] <= day_datetime < dividers[2]:
+                one_hot_quarter = [0, 0, 1, 0]
+
+            elif dividers[2] <= day_datetime < end_of_school_date:
+                one_hot_quarter = [0, 0, 0, 1]
+
+            else:
+                one_hot_quarter = [0, 0, 0, 0]
+
+            examples.append([days_since_first_record, *one_hot_quarter])
+
+    append_one_hot_quarter_features()
     append_velocity_feature(examples)
-    future_inputs = [[*lst, examples[-1][-1]] for lst in future_inputs]
 
-    print(f'Examples: {examples}')
-    print(f'Future Inputs: {future_inputs}')
+    return np.asarray(examples, dtype=np.float32), np.asarray(grades, dtype=np.float32)
+
+def create_data_for_grade_prediction_from_course(user: User, course_index: int) -> list[float]:
+    """
+    Returns a list of samples with engineered features by using a user's course.
     
-    # CREATING / FITTING MODEL
-    model_pipeline = Pipeline(steps=[
-        ('scaler', StandardScaler()),
-        ('regressor', SVR(kernel='rbf', C=1000, epsilon=0.1, gamma='scale'))
-    ])
-    model_pipeline.fit(examples, grades)
-    current_days_predictions = model_pipeline.predict(examples)
-    future_days_predictions = model_pipeline.predict(future_inputs)
-    predictions = [*current_days_predictions, *future_days_predictions]
+    Args:
+        user: A User object.
+        course_index: The index of the course in the user's course list to use for grade data.
+    
+    Returns:
+        A sample with engineered features / A list with numbers.
+    """
 
-    return predictions
+    course: Course = user.courses[course_index]
+    course_grades = course.grades
+    grades_datetimes_tracked = [grade.date_created for grade in course_grades]
+    start_of_school_date = user.start_of_school_date
+    end_of_school_date = user.end_of_school_date
+
+    examples, targets = create_data_for_grade_prediction(
+        datetimes=grades_datetimes_tracked,
+        grades=course_grades,
+        start_of_school_date=start_of_school_date,
+        end_of_school_date=end_of_school_date
+        )
+
+    return examples, targets
+
+@app_context_wrapper
+def train_model_on_user_grade_data(app: Flask) -> None:
+    """
+    Extracts grade data from every user that enables the option to have their data used for training, trains a model to predict future grades, and saves it.
+    
+    Args:
+        app: A Flask object.
+    """
+    # Lazy importing
+    from sklearn.pipeline import Pipeline
+    from sklearn.preprocessing import StandardScaler
+    from skorch.net import NeuralNet
+
+    with app.app_context():
+        users: list[User] = db.session.scalars(db.select(User).where(User.data_analysis_consent == True)).all()
+        examples = []
+        targets = []
+
+        if len(users) == 0:
+            return 
+
+        # Iterates through every grade in every course to create features
+        for user in users:
+            for course_index in range(len(user.courses)):
+                course = user.courses[course_index]
+
+                course_grades = [grade.percentage for grade in course.grades]
+                grade_dates = [grade.date_created for grade in course.grades]
+
+                if len(course_grades) == 0:
+                    continue
+
+                engineered_examples, grades = create_data_for_grade_prediction(
+                    grade_dates,
+                    course_grades,
+                    start_of_school_date=user.start_of_school_date,
+                    end_of_school_date=user.end_of_school_date
+                    )
+                examples.extend(engineered_examples)
+                targets.extend(grades)
+
+        examples = np.array(examples)
+        targets = np.array(targets)
+
+        if len(examples) == 0:
+            return
+
+        network = nn.Sequential(
+                    nn.Linear(examples.shape[1], 16),
+                    nn.ReLU(),
+                    nn.Linear(16, 1),
+                    nn.Sigmoid()  # Returns a decimal 0-1 which can then be multiplied by 100 to represent a grade
+                )
+        # CREATING / FITTING MODEL
+        model_pipeline = Pipeline(steps=[
+            ('scaler', StandardScaler()),
+            ('regressor', NeuralNet(
+                network,
+                criterion=nn.MSELoss,
+                optimizer=optim.Adam,
+                lr=0.001,
+                train_split=None,
+                max_epochs=500
+                )
+            )
+        ])
+
+        model_pipeline.fit(examples, targets)
+        joblib.dump(model_pipeline, GRADE_FORECASTER_MODEL_PATH)
+
+def predict_grades(
+        course_index: int,
+        days_into_future: int,
+        current_user: User
+                    ) -> list[float]:
+    """
+    Predicts future grades by fitting a feed-forward network on grade data.
+
+    This function converts the datetimes to the amount of days since the earliest datetime and calculates the rate of change in between each point for the features.
+    
+    Args:
+        course_index: The index of the course in the user's courses list.
+        days_into_future: An integer that determines how many future days the model will predict for.
+        current_user: A user object
+
+    Returns:
+        A list of the model's predictions as floating point values.
+
+    """
+
+    course = current_user.courses[course_index]
+    future_days = [
+        course.grades[-1].date_created + timedelta(days=i+1) for i in range(days_into_future)
+        ]
+    examples_to_predict, _ = create_data_for_grade_prediction(
+        datetimes=future_days,
+        grades=[course.grades[-1].percentage for i in range(days_into_future)],  # A list full of the latest grade percentage
+        start_of_school_date=current_user.start_of_school_date,
+        end_of_school_date=current_user.end_of_school_date
+    )
+    examples_to_predict = np.asarray(examples_to_predict, dtype=np.float32)
+
+    try:
+        model = joblib.load(GRADE_FORECASTER_MODEL_PATH)
+    except FileNotFoundError:
+        return
+    
+    future_days_predictions = model.predict(examples_to_predict)
+    predictions = np.array(future_days_predictions).flatten()
+
+    return predictions * 100  # Convert decimals 0-1 to 0-100 since model uses sigmoid activation function in output layer
 
 def create_grades_vs_time_with_predictions(
         title: str,
         datetimes: list[datetime],
         grades: list[float],
         grade_goal: int,
-        school_start_date: datetime,
-        school_end_time: datetime,
-        days_into_future: int
+        days_into_future: int,
+        current_user: User,
+        course_index: int
         ) -> str:
     """
     Creates and returns a graph by using datetimes for the x-axis, using grades for the y-axis, and fitting a Support Vector Regression model.
@@ -193,9 +307,9 @@ def create_grades_vs_time_with_predictions(
         datetimes: A list of datetime objects.
         grades: A list of floating point values within the range of 0-inf.
         grade_goal: A floating point value that determines the y-value of the horizontal line that represents the goal of the course.
-        school_start_date: A datetime object that represents the start of the user's school year.
-        school_end_date: A datetime object that represents the end of a the user's school year.
         days_into_future: An integer that determines how many future days the model will predict for.
+        current_user: A User object.
+        course_index: The index of the course in the user's courses list that will have their grades plotted.
 
     Returns:
         A string with the HTML representation of the created graph.
@@ -210,12 +324,13 @@ def create_grades_vs_time_with_predictions(
     days_from_min =  sorted([(d - min_date).total_seconds() / 86400 for d in datetimes])  # Convert seconds into days
     
     predictions = predict_grades(
-        datetimes=datetimes,
-        grades=grades,
+        course_index=course_index,
         days_into_future=days_into_future,
-        start_of_school_date=school_start_date,
-        end_of_school_date=school_end_time
+        current_user=current_user
         )
+
+    if predictions is None:
+        return
     
     fig = go.Figure(data=go.Scatter(
         x=days_from_min,
@@ -226,7 +341,7 @@ def create_grades_vs_time_with_predictions(
     
     fig.add_trace(
         go.Scatter(
-        x=[*days_from_min, *[days_from_min[-1] + i for i in range(1, days_into_future)]],
+        x=[days_from_min[-1] + i for i in range(1, days_into_future)],
         y=predictions,
         mode='lines',
         name='Prediction'

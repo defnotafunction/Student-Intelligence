@@ -1,5 +1,5 @@
 from flask_wtf import FlaskForm
-from wtforms import StringField, PasswordField, SubmitField, TextAreaField, IntegerField, DecimalField, FileField, DateField
+from wtforms import StringField, PasswordField, SubmitField, TextAreaField, IntegerField, DecimalField, FileField, DateField, BooleanField
 from wtforms.validators import DataRequired, Length, NumberRange, Optional
 from flask_wtf.file import FileAllowed
 
@@ -69,4 +69,9 @@ class SchoolYearForm(FlaskForm):
         format='%Y-%m-%d',
         validators=[DataRequired()]
     )
+    submit = SubmitField('Submit')
+
+class DataConsentForm(FlaskForm):
+    """Form used in the Settings Route."""
+    enable_consent = BooleanField("I will allow my data to be used for data analysis and predictive model training.")
     submit = SubmitField('Submit')

@@ -8,6 +8,14 @@ from forms import *
 from helper import *
 from extension import *
 from pypdf import PdfReader
+from apscheduler.schedulers.background import BackgroundScheduler
+
+scheduler = BackgroundScheduler()
+
+# Train model for predicting grades every two weeks
+
+scheduler.add_job(func=lambda: train_model_on_user_grade_data(app), trigger="interval", weeks=1)
+scheduler.start()
 
 login_manager = LoginManager()
 login_manager.login_view = 'login'
@@ -21,11 +29,12 @@ def load_user(user_id):
 
 @app.route('/')
 def index():
-    """Home page."""
+    """Home route."""
     return render_template('index.html')
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
+    """The Log-in route."""
     login_form = LoginForm()
 
     if login_form.validate_on_submit():
@@ -45,6 +54,7 @@ def login():
 
 @app.route('/sign-in', methods=['GET', 'POST'])
 def signin():
+    """The Sign-in route."""
     signin_form = LoginForm()  # The LoginForm has the same fields signing in needs.
     
     if signin_form.validate_on_submit():
@@ -62,12 +72,14 @@ def signin():
 
 @app.route('/logout')
 def logout():
+    """The Logout route, instantly redirects user to the login route after calling the logout user function."""
     logout_user()
     return redirect(url_for('login'))
 
 @app.route('/dashboard', methods=['GET', 'POST'])
 @login_required
 def dashboard():
+    """The dashboard route."""
     session.permanent = True
 
     made_graphs = []
@@ -76,22 +88,26 @@ def dashboard():
     load_advice_form = LoadCourseAdvice()
 
     # Creating graphs for each course
-    for course in current_user.courses:
+    min_sample_size = 5
+    for course_index, course in enumerate(current_user.courses):
         data = [(g.date_created, g.percentage) for g in course.grades]
             
         datetimes, grades = zip(*data)
         datetimes, grades = list(datetimes), list(grades)
-        graph_html = create_grades_vs_time_with_predictions(
-            title=course.name,
-            datetimes=datetimes,
-            grades=grades,
-            school_start_date=current_user.start_of_school_date,
-            school_end_time=current_user.end_of_school_date,
-            grade_goal=course.grade_goal,
-            days_into_future=20,
-            )
-        made_graphs.append(graph_html)
 
+        if len(datetimes) >= min_sample_size:
+            future_days_to_model = (datetimes[-1] - datetimes[0]).days * 2 + 5
+            graph_html = create_grades_vs_time_with_predictions(
+                title=course.name,
+                datetimes=datetimes,
+                grades=grades,
+                grade_goal=course.grade_goal,
+                days_into_future=future_days_to_model,
+                current_user=current_user,
+                course_index=course_index
+            )
+            made_graphs.append(graph_html)
+    
     # Recommending videos based on difference of course grade and its goal (How far it is from goal)
     if current_user.courses:
         lowest_grade_course = max(current_user.courses, key=lambda x: x.grade_goal - x.grade)
@@ -129,6 +145,7 @@ def dashboard():
 @app.route('/courses', methods=['GET', 'POST'])
 @login_required
 def courses():
+    """The courses route."""
     delete_grade_form = DeleteGradeForm()
     delete_course_form = DeleteCourseForm()
     add_course_form = AddCourseForm()
@@ -218,7 +235,8 @@ def courses():
 @app.route('/note-scanner', methods=['GET', 'POST'])
 @login_required
 def note_scanner():
-    session.permanent = False
+    """The note scanner route."""
+    session.permanent = False                                                                                                                                  
     #if session.get('notes') is None:
     #    session['notes'] = []
 
@@ -226,7 +244,6 @@ def note_scanner():
     add_notes_form = AddNotesForm()
     search_form = BasicSearchForm()
     
-
     if add_notes_form.validate_on_submit():
         # User pasted text
         if add_notes_form.note_content.data:
@@ -276,6 +293,7 @@ def note_scanner():
 @app.route('/delete-course/<int:course_id>', methods=['POST'])
 @login_required
 def delete_course(course_id: int):
+    """Deletes a specific course from the database."""
     course_to_delete = db.session.get(Course, course_id)
 
     db.session.delete(course_to_delete)
@@ -286,6 +304,7 @@ def delete_course(course_id: int):
 @app.route('/delete-grade/<int:grade_id>', methods=['POST'])
 @login_required
 def delete_grade(grade_id: int):
+    """Deletes a specific grade from the database."""
     grade_to_delete = db.session.get(Grade, grade_id)
 
     db.session.delete(grade_to_delete)
@@ -295,16 +314,25 @@ def delete_grade(grade_id: int):
 
 @app.route('/contact')
 def contact():
+    """The contact route."""
     return render_template('contact.html')
 
 @app.route('/settings', methods=['GET', 'POST'])
 @login_required
 def settings():
+    """The settings route."""
     school_year_form = SchoolYearForm()
+    data_consent_form = DataConsentForm()
 
     if school_year_form.validate_on_submit():
         current_user.start_of_school_date = school_year_form.start_date.data
         current_user.end_of_school_date = school_year_form.end_date.data
+        db.session.commit()
+
+        return redirect('settings')
+
+    if data_consent_form.validate_on_submit():
+        current_user.data_analysis_consent = data_consent_form.enable_consent.data
         db.session.commit()
 
         return redirect('settings')
@@ -314,10 +342,14 @@ def settings():
         school_year_form.start_date.data = current_user.start_of_school_date
         school_year_form.end_date.data = current_user.end_of_school_date
 
-    return render_template('settings.html', school_year_form=school_year_form)
+    return render_template(
+        'settings.html',
+        school_year_form=school_year_form,
+        data_consent_form=data_consent_form
+        )
 
 if __name__ == '__main__':
     with app.app_context():
         db.create_all()
 
-    app.run(threaded=True)
+    app.run(use_reloader=False)
