@@ -1,6 +1,6 @@
 from flask_login import UserMixin
 from datetime import datetime, timezone
-from extension import db
+from .extension import db
 
 def get_default_school_start_datetime() -> datetime:
     """Returns a datetime object that holds the usual first day of school which is the third monday of August in the year the user is currently in."""

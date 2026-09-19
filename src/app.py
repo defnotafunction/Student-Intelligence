@@ -4,11 +4,13 @@ load_dotenv()
 from flask import render_template, redirect, url_for, flash, request, session
 from flask_login import LoginManager, current_user, login_user, logout_user, login_required
 from werkzeug.security import check_password_hash
-from forms import *
-from helper import *
-from extension import *
+from .forms import *
+from .helper import *
+from .extension import *
 from pypdf import PdfReader
 from apscheduler.schedulers.background import BackgroundScheduler
+
+
 
 scheduler = BackgroundScheduler()
 
@@ -348,8 +350,3 @@ def settings():
         data_consent_form=data_consent_form
         )
 
-if __name__ == '__main__':
-    with app.app_context():
-        db.create_all()
-
-    app.run(use_reloader=False)

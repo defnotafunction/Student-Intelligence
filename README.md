@@ -11,19 +11,26 @@ Student Intelligence is a Flask app that aids students with organizing and impro
 
 ```text
 Student Intelligence/
-├── app.py                  # Main Flask routes, authentication, and page rendering
-├── extension.py            # Initializes the Flask app, SQLAlchemy, and app configuration
-├── forms.py                # WTForm classes for login, courses, notes, search, and settings
-├── helper.py               # Functions for Database management, Plotly graphs, SVR grade predictions, and API usage
-├── models.py               # SQLAlchemy models for users, courses, and grades
-├── README.md               # Project documentation
-├── .gitignore              # Ignored files for version control
+├── data/
+    `── mlmodels/           # Stored Machine Learning models
 ├── docs/                   # Project planning and documentation files
 ├── instance/               # Folder containing local SQLite database
-├── static/                 # Static assets for frontend styles
-│   ├── css/
-│   └── src/
-└── templates/              # Jinja2 templates for rendered HTML pages
+├── src/                        # Source code
+    ├── static/                 # Static assets for frontend styles
+        ├── css/
+        `── src/
+    ├── templates/              # Jinja2 templates for rendered HTML pages
+    ├── app.py                  # Main Flask routes, authentication, and page rendering
+    ├── extension.py            # Initializes the Flask app, SQLAlchemy, and app configuration
+    ├── forms.py                # WTForm classes for login, courses, notes, search, and settings
+    ├── helper.py               # Functions for Database management, Plotly graphs, SVR grade predictions, and API usage
+    `── models.py               # SQLAlchemy models for users, courses, and grades
+
+├── README.md               # Project documentation
+├── .gitignore              # Ignored files for version control
+├── main.py                 # Main Entry Point
+├── requirements.txt        # Required python libraries
+
 ```
 
 ## Stack
