@@ -180,13 +180,11 @@ def courses():
             grade_goal=float(add_course_form.grade_goal.data)
         )
 
-        db.session.add(new_course)
+        current_user.courses.append(new_course)
         
         initial_grade = Grade(course_id=new_course.id, percentage=final_grade)
-        db.session.add(initial_grade)
         new_course.grades.append(initial_grade)
         
-        current_user.courses.append(new_course)
         db.session.commit()
 
         return redirect('courses')
