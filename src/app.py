@@ -8,16 +8,6 @@ from .forms import *
 from .helper import *
 from .extension import *
 from pypdf import PdfReader
-from apscheduler.schedulers.background import BackgroundScheduler
-
-
-
-scheduler = BackgroundScheduler()
-
-# Train model for predicting grades every two weeks
-
-scheduler.add_job(func=lambda: train_model_on_user_grade_data(app), trigger="interval", weeks=1)
-scheduler.start()
 
 login_manager = LoginManager()
 login_manager.login_view = 'login'
