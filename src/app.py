@@ -182,7 +182,7 @@ def courses():
 
         current_user.courses.append(new_course)
         
-        initial_grade = Grade(course_id=new_course.id, percentage=final_grade)
+        initial_grade = Grade(percentage=final_grade)
         new_course.grades.append(initial_grade)
         
         db.session.commit()
