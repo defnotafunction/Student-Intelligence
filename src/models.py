@@ -40,6 +40,7 @@ class User(db.Model, UserMixin):
     start_of_school_date = db.Column(db.DateTime, default=get_default_school_start_datetime)
     end_of_school_date = db.Column(db.DateTime, default=get_default_school_end_datetime)
     data_analysis_consent = db.Column(db.Boolean, default=True, nullable=False)  # This enables a user's data to be used (for training predictive models, etc)
+    is_admin = db.Column(db.Boolean, default=False, nullable=False)
 
     courses = db.relationship('Course', backref='user', cascade='all, delete-orphan')
 

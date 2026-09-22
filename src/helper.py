@@ -33,9 +33,9 @@ def get_user_from_username(db: SQLAlchemy, username: str):
 def get_user_exists(db: SQLAlchemy, username: str) -> bool:
     return get_user_from_username(db, username) is not None
 
-def create_and_save_user(db: SQLAlchemy, username: str, unhashed_password: str) -> User:
+def create_and_save_user(db: SQLAlchemy, username: str, unhashed_password: str, **extra_attributes) -> User:
     hashed_password = generate_password_hash(unhashed_password)
-    new_user = User(username=username, hashed_password=hashed_password)
+    new_user = User(username=username, hashed_password=hashed_password, **extra_attributes)
     db.session.add(new_user)
     db.session.commit()
     return new_user
@@ -176,7 +176,6 @@ def create_data_for_grade_prediction_from_course(user: User, course_index: int) 
 
     return examples, targets
 
-@app_context_wrapper
 def train_model_on_user_grade_data(app: Flask) -> None:
     """
     Extracts grade data from every user that enables the option to have their data used for training, trains a model to predict future grades, and saves it.

@@ -3,17 +3,59 @@ load_dotenv()
 
 from flask import render_template, redirect, url_for, flash, request, session
 from flask_login import LoginManager, current_user, login_user, logout_user, login_required
+from flask_admin import Admin, AdminIndexView, BaseView, expose
+from flask_admin.contrib.sqla import ModelView
 from werkzeug.security import check_password_hash
 from .forms import *
 from .helper import *
 from .extension import *
 from pypdf import PdfReader
 
+# ADMIN CLASSES
+
+SECRET_ADMIN_NAME = os.environ.get('SECRET_ADMIN_NAME')
+
+class SecureModelView(ModelView):
+    def is_accessible(self):
+        return current_user.is_authenticated and current_user.is_admin
+
+    def inaccessible_callback(self, name, **kwargs):
+        return redirect(url_for('login', next=request.url))
+
+class SecureIndexView(AdminIndexView):
+    def is_accessible(self):
+            return current_user.is_authenticated and current_user.is_admin
+    
+    def inaccessible_callback(self, name, **kwargs):
+        return redirect(url_for('login', next=request.url))
+
+class ModelTrainingView(BaseView):
+    """This page allows admins to run model training loops."""
+    def is_accessible(self):
+        return current_user.is_authenticated and current_user.is_admin
+
+    def inaccessible_callback(self, name, **kwargs):
+        return redirect(url_for('login', next=request.url))
+
+    @expose('/')
+    def index(self):
+        return self.render('admin/training.html')
+
+    @expose('/train_user_grade_data', methods=['POST'])
+    def train_user_grade_data(self):
+        train_model_on_user_grade_data(app)
+
+        return redirect(request.referrer)
+
 login_manager = LoginManager()
 login_manager.login_view = 'login'
 
 db.init_app(app)
 login_manager.init_app(app)
+
+admin = Admin(app, name="Admin's Dashboard", index_view=SecureIndexView())
+admin.add_view(SecureModelView(User, db.session))
+admin.add_view(ModelTrainingView('Model Training'))
 
 @login_manager.user_loader
 def load_user(user_id):
@@ -56,7 +98,8 @@ def signin():
         if get_user_exists(db, input_username):
             flash('User already exists.')
         else:
-            user = create_and_save_user(db, input_username, input_password)
+            has_admin_name = input_username == SECRET_ADMIN_NAME
+            user = create_and_save_user(db, input_username, input_password, is_admin=has_admin_name)
             login_user(user, remember=True)
             return redirect(url_for('index'))
 
@@ -148,9 +191,6 @@ def courses():
     
     # Default update form / graph that'll pop up if user didn't select
     if len(current_user.courses) >= 1:
-        if dropdown_update_course_id is None:
-            dropdown_update_course_id = current_user.courses[0].id
-
         if dropdown_graph_course_id is None:
             dropdown_graph_course_id = current_user.courses[0].id
        
