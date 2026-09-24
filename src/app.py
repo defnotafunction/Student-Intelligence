@@ -12,7 +12,6 @@ from .extension import *
 from pypdf import PdfReader
 
 # ADMIN CLASSES
-
 SECRET_ADMIN_NAME = os.environ.get('SECRET_ADMIN_NAME')
 
 class SecureModelView(ModelView):
@@ -30,7 +29,7 @@ class SecureIndexView(AdminIndexView):
         return redirect(url_for('login', next=request.url))
 
 class ModelTrainingView(BaseView):
-    """This page allows admins to run model training loops."""
+    """This view allows admins to run model training loops."""
     def is_accessible(self):
         return current_user.is_authenticated and current_user.is_admin
 
