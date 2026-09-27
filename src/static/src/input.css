@@ -1,2 +1,6 @@
 @import "tailwindcss";
 @source "../../templates/**/*.html";
+
+.base-p {
+    @apply text-center text-base text-slate-800;
+}
