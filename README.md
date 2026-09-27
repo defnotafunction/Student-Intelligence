@@ -3,7 +3,7 @@ Student Intelligence is a Flask app that aids students with organizing and impro
 
 ## Core Features
 - Course Creation - Users can create, alter, and delete courses.
-- Grade Tracking - Saves and graphs grades of user's courses, and their goal to reach for their courses. Uses Support Vector Regresson to predict future grades, powered by `scikit-learn`.
+- Grade Tracking - Saves and graphs grades of user's courses, and their goal to reach for their courses. Uses a feed-forward network to predict future grades, powered by `skorch`.
 - Course Assistance - Uses Gemini API, custom tools, and YouTube video recommendations for advice and help with courses.
 
 
@@ -15,16 +15,17 @@ Student Intelligence/
     `── mlmodels/           # Stored Machine Learning models
 ├── docs/                   # Project planning and documentation files
 ├── instance/               # Folder containing local SQLite database
-├── src/                        # Source code
-    ├── static/                 # Static assets for frontend styles
+├── src/                    # Source code
+    ├── static/             # Static assets for frontend styles
         ├── css/
         `── src/
-    ├── templates/              # Jinja2 templates for rendered HTML pages
-    ├── app.py                  # Main Flask routes, authentication, and page rendering
-    ├── extension.py            # Initializes the Flask app, SQLAlchemy, and app configuration
-    ├── forms.py                # WTForm classes for login, courses, notes, search, and settings
-    ├── helper.py               # Functions for Database management, Plotly graphs, SVR grade predictions, and API usage
-    `── models.py               # SQLAlchemy models for users, courses, and grades
+    ├── templates/          # Jinja2 templates for rendered HTML pages
+        `── admin/          # Templates that render pages for admin eyes only
+    ├── app.py              # Main Flask routes, authentication, and page rendering
+    ├── extension.py        # Initializes the Flask app, SQLAlchemy, and app configuration
+├── forms.py                # WTForm classes for login, courses, notes, search, and settings
+├── helper.py               # Functions for Database management, Plotly graphs, grade predictions, and API usage
+`── models.py               # SQLAlchemy models for users, courses, and grades
 
 ├── README.md               # Project documentation
 ├── .gitignore              # Ignored files for version control
@@ -40,7 +41,7 @@ Student Intelligence/
 - Routing, Forms, Database: Flask, Flask-SQLAlchemy, Flask-WTF, WTForms
 - Authentication: Werkzeug, Flask-Login
 - Data Visualization: Plotly
-- ML/AI: scikit-learn, spaCy, google-genai
+- ML/AI: scikit-learn, spaCy, google-genai, pytorch, skorch
 - Frontend: HTML / CSS / Jinja2
 
 ## License

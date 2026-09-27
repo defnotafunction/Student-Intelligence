@@ -35,8 +35,10 @@
 
 
                 <span>
+                    {{ data_consent_form.enable_consent(class="w-5 h-5 appearance-none border border-gray-300
+                    rounded-md checked:bg-blue-600 checked:border-transparent focus:outline-none focus:ring-2
+                    focus:ring-blue-500 cursor-pointer transition duration-200") }}
                     {{ data_consent_form.enable_consent.label }}
-                    {{ data_consent_form.enable_consent(class="border border-gray-300 rounded-md p-2") }}
                 </span>
                 {{ data_consent_form.submit(class='rounded-md p-2 transition-colors duration-200 hover:bg-gray-200/60')
                 }}

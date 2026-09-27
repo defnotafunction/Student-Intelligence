@@ -4,13 +4,9 @@ from .extension import *
 from datetime import timedelta
 from werkzeug.security import generate_password_hash
 from google import genai
-import torch
-import torch.nn as nn
-import torch.optim as optim
 import numpy as np
 import joblib
 
-torch.manual_seed(42)
 np.random.seed(42)
 
 client = genai.Client(api_key=os.getenv('GEMINI_API_KEY'))
@@ -184,9 +180,14 @@ def train_model_on_user_grade_data(app: Flask) -> None:
         app: A Flask object.
     """
     # Lazy importing
+    import torch
+    import torch.nn as nn
+    import torch.optim as optim
     from sklearn.pipeline import Pipeline
     from sklearn.preprocessing import StandardScaler
     from skorch.net import NeuralNet
+
+    torch.manual_seed(42)
 
     with app.app_context():
         users: list[User] = db.session.scalars(db.select(User).where(User.data_analysis_consent == True)).all()
