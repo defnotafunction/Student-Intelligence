@@ -222,12 +222,14 @@ def get_grade_forecasting_architecture() -> tuple[type]:
 
     return GradeLSTM
 
-def train_model_on_user_grade_data(app: Flask) -> None:
+def train_model_on_user_grade_data(app: Flask, epochs: int = 500, learning_rate: float = 0.01) -> None:
     """
     Extracts grade data from every user that enables the option to have their data used for training, trains a model to predict future grades, and saves it.
     
     Args:
         app: A Flask object.
+        epochs: The number of epochs the model will train for.
+        learning_rate: The learning rate of the model.
     """
     # Lazy importing
     import torch
@@ -284,9 +286,9 @@ def train_model_on_user_grade_data(app: Flask) -> None:
                 network,
                 criterion=nn.MSELoss,
                 optimizer=optim.Adam,
-                lr=0.001,
+                lr=learning_rate,
                 train_split=None,
-                max_epochs=500
+                max_epochs=epochs
                 )
             )
         ])
@@ -322,7 +324,6 @@ def predict_grades(
     """
     from sklearn.pipeline import Pipeline
     from skorch.net import NeuralNet
-    import torch.nn as nn
 
     course = current_user.courses[course_index]
     future_days = [
@@ -350,7 +351,7 @@ def predict_grades(
         net = NeuralNet(
             GradeLSTM(examples_to_predict.shape[-1]),
             max_epochs=0,
-            criterion=nn.MSELoss
+            criterion=lambda y_pred, y_true: y_pred  # Importing pytorch is computationally expensive
             )
         net.initialize()
         net.load_params(f_params=os.path.join(GRADE_FORECASTER_MODEL_PATH, 'weights.pt'))
@@ -374,7 +375,6 @@ def predict_grades(
         future_days_predictions.extend(predictions)
  
     predictions = np.array(future_days_predictions).flatten()
-    print(predictions)
     return predictions * 100  # Convert decimals 0-1 to 0-100 since model uses sigmoid activation function in output layer
 
 def create_grades_vs_time_with_predictions(

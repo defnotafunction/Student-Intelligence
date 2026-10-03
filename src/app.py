@@ -36,15 +36,26 @@ class ModelTrainingView(BaseView):
     def inaccessible_callback(self, name, **kwargs):
         return redirect(url_for('login', next=request.url))
 
-    @expose('/')
+    @expose('/', methods=['GET', 'POST'])
     def index(self):
-        return self.render('admin/training.html')
+        hyperparameters_form = TuneHyperparametersForm()
 
-    @expose('/train_user_grade_data', methods=['POST'])
-    def train_user_grade_data(self):
-        train_model_on_user_grade_data(app)
+        if hyperparameters_form.validate_on_submit():
+            return redirect(
+                url_for(
+                    'modeltrainingview.train_user_grade_data',
+                    learning_rate=float(hyperparameters_form.learning_rate.data),
+                    num_of_epochs=int(hyperparameters_form.num_of_epochs.data),
+                    )
+                        )
+        
+        return self.render('admin/training.html', hyperparameters_form=hyperparameters_form)
 
-        return redirect(request.referrer)
+    @expose('/train_user_grade_data/<float:learning_rate>/<int:num_of_epochs>', methods=['GET'])
+    def train_user_grade_data(self, learning_rate, num_of_epochs):
+        train_model_on_user_grade_data(app, learning_rate=learning_rate, epochs=num_of_epochs)
+
+        return redirect(url_for('modeltrainingview.index'))
 
 login_manager = LoginManager()
 login_manager.login_view = 'login'

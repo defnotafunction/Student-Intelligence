@@ -75,3 +75,8 @@ class DataConsentForm(FlaskForm):
     """Form used in the Settings Route."""
     enable_consent = BooleanField("I will allow my data to be used for data analysis and predictive model training.")
     submit = SubmitField('Submit')
+
+class TuneHyperparametersForm(FlaskForm):
+    learning_rate = DecimalField('Learning Rate', validators=[DataRequired()])
+    num_of_epochs = IntegerField('Number of Epochs', validators=[DataRequired()])
+    submit = SubmitField('Train')

@@ -6,10 +6,16 @@
 <div class="bg-white rounded-lg border border-gray-200 shadow-sm p-4">
     <h5>(Re)train a model on user grade data.</h5>
     <p class="base-p">Only uses users who consented to having their grade data used.</p>
-    <form action="{{ url_for('.train_user_grade_data') }}" method="POST">
-        <button type="submit" class="btn btn-danger">
-            Train
-        </button>
+    <form class="flex flex-col gap-4" method="POST">
+        {{ hyperparameters_form.hidden_tag() }}
+
+        {{ hyperparameters_form.learning_rate.label }}
+        {{ hyperparameters_form.learning_rate(class="border border-gray-300 rounded-md p-2") }}
+
+        {{ hyperparameters_form.num_of_epochs.label }}
+        {{ hyperparameters_form.num_of_epochs(class="border border-gray-300 rounded-md p-2") }}
+
+        {{ hyperparameters_form.submit(class='rounded-md p-2 transition-colors duration-200 hover:bg-gray-200/60') }}
     </form>
 </div>
 {% endblock %}
