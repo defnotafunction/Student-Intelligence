@@ -5,12 +5,33 @@ from datetime import timedelta
 from werkzeug.security import generate_password_hash
 from google import genai
 import numpy as np
+from sklearn.preprocessing import StandardScaler
+from sklearn.base import TransformerMixin, BaseEstimator
 import joblib
 
 np.random.seed(42)
+ 
+class ScalerLSTM3D(TransformerMixin, BaseEstimator):  # Inheritance makes it compatible with scikit-learn related libraries like skorch
+    def __init__(self, scaler_to_use: TransformerMixin = StandardScaler()):
+        self.scaler_to_use = scaler_to_use
+
+    def fit(self, X, y=None):
+        samples, sequences, features = X.shape
+        flattened_X = X.reshape(-1, features)  # Convert into 2D
+        
+        self.scaler_to_use.fit(flattened_X)
+
+        return self
+
+    def transform(self, X, y=None):
+        samples, sequences, features = X.shape
+        flattened_X = X.reshape(-1, features)  # Convert into 2D
+    
+        X_scaled_flat = self.scaler_to_use.transform(flattened_X)
+        return X_scaled_flat.reshape(samples, sequences, features)
 
 client = genai.Client(api_key=os.getenv('GEMINI_API_KEY'))
-GRADE_FORECASTER_MODEL_PATH = os.path.join('data', 'mlmodels', 'supervised_grade_forecaster.pkl')
+GRADE_FORECASTER_MODEL_PATH = os.path.join('data', 'mlmodels', 'gradeforecasting')
 
 def app_context_wrapper(func: callable):
     def inner(*args, **kwargs):        
@@ -110,7 +131,7 @@ def create_data_for_grade_prediction(
             examples[example_idx].append(velocity)
 
     # Split time from start_of_school_date to end_of_school_date into
-    #  4 equal parts to add quarters of the school year as a feature 
+    # 4 equal parts to add quarters of the school year as a feature 
     def append_one_hot_quarter_features() -> None:
         """Appends a one hot representation of what quarter the current user is in."""
         duration_of_school = end_of_school_date - start_of_school_date
@@ -172,6 +193,35 @@ def create_data_for_grade_prediction_from_course(user: User, course_index: int) 
 
     return examples, targets
 
+def get_grade_forecasting_architecture() -> tuple[type]:
+    import torch.nn as nn
+
+    class GradeLSTM(nn.Module):
+        def __init__(self, n_features: int):
+            super().__init__()
+
+            self.lstm = nn.LSTM(input_size=n_features, num_layers=1, hidden_size=32, batch_first=True)
+            self.linear1 = nn.Linear(32, 8)
+            self.linear2 = nn.Linear(8, 1)
+
+            self.relu = nn.ReLU()
+            self.sigmoid = nn.Sigmoid()
+
+        def forward(self, x):
+            output, (hn, cn) = self.lstm(x)
+
+            hn = hn[-1, :, :] 
+            
+            x = self.linear1(hn)
+            x = self.relu(x)
+
+            x = self.linear2(x)
+            x = self.sigmoid(x)
+
+            return x
+
+    return GradeLSTM
+
 def train_model_on_user_grade_data(app: Flask) -> None:
     """
     Extracts grade data from every user that enables the option to have their data used for training, trains a model to predict future grades, and saves it.
@@ -181,12 +231,13 @@ def train_model_on_user_grade_data(app: Flask) -> None:
     """
     # Lazy importing
     import torch
-    import torch.nn as nn
     import torch.optim as optim
     from sklearn.pipeline import Pipeline
-    from sklearn.preprocessing import StandardScaler
     from skorch.net import NeuralNet
+    import torch.nn as nn
 
+    GradeLSTM = get_grade_forecasting_architecture()
+    
     torch.manual_seed(42)
 
     with app.app_context():
@@ -214,8 +265,10 @@ def train_model_on_user_grade_data(app: Flask) -> None:
                     start_of_school_date=user.start_of_school_date,
                     end_of_school_date=user.end_of_school_date
                     )
-                examples.extend(engineered_examples)
-                targets.extend(grades)
+
+                # LSTMs require sequential data for training
+                examples.append(engineered_examples)
+                targets.append(grades[-1])
 
         examples = np.array(examples)
         targets = np.array(targets)
@@ -223,15 +276,10 @@ def train_model_on_user_grade_data(app: Flask) -> None:
         if len(examples) == 0:
             return
 
-        network = nn.Sequential(
-                    nn.Linear(examples.shape[1], 16),
-                    nn.ReLU(),
-                    nn.Linear(16, 1),
-                    nn.Sigmoid()  # Returns a decimal 0-1 which can then be multiplied by 100 to represent a grade
-                )
+        network = GradeLSTM(n_features=examples.shape[-1])
         # CREATING / FITTING MODEL
         model_pipeline = Pipeline(steps=[
-            ('scaler', StandardScaler()),
+            ('scaler', ScalerLSTM3D()),
             ('regressor', NeuralNet(
                 network,
                 criterion=nn.MSELoss,
@@ -243,14 +291,21 @@ def train_model_on_user_grade_data(app: Flask) -> None:
             )
         ])
 
+        # Regular serialization (pickle / joblib) isn't compatible with local classes
         model_pipeline.fit(examples, targets)
-        joblib.dump(model_pipeline, GRADE_FORECASTER_MODEL_PATH)
+        skorch_net = model_pipeline.named_steps['regressor']
+        skorch_net.save_params(f_params=os.path.join(GRADE_FORECASTER_MODEL_PATH, 'weights.pt'))
+
+        joblib.dump(model_pipeline['scaler'], os.path.join(GRADE_FORECASTER_MODEL_PATH, 'scaler.pkl'))
+
+
 
 def predict_grades(
         course_index: int,
         days_into_future: int,
         current_user: User
                     ) -> list[float]:
+    
     """
     Predicts future grades by fitting a feed-forward network on grade data.
 
@@ -265,11 +320,22 @@ def predict_grades(
         A list of the model's predictions as floating point values.
 
     """
+    from sklearn.pipeline import Pipeline
+    from skorch.net import NeuralNet
+    import torch.nn as nn
 
     course = current_user.courses[course_index]
     future_days = [
         course.grades[-1].date_created + timedelta(days=i+1) for i in range(days_into_future)
         ]
+    
+    past_examples, _ = create_data_for_grade_prediction(
+        datetimes=[grade.date_created for grade in course.grades],
+        grades=[grade.percentage for grade in course.grades],
+        start_of_school_date=current_user.start_of_school_date,
+        end_of_school_date=current_user.end_of_school_date
+    )
+
     examples_to_predict, _ = create_data_for_grade_prediction(
         datetimes=future_days,
         grades=[course.grades[-1].percentage for i in range(days_into_future)],  # A list full of the latest grade percentage
@@ -279,13 +345,36 @@ def predict_grades(
     examples_to_predict = np.asarray(examples_to_predict, dtype=np.float32)
 
     try:
-        model = joblib.load(GRADE_FORECASTER_MODEL_PATH)
+        GradeLSTM = get_grade_forecasting_architecture()
+        scaler = joblib.load(os.path.join(GRADE_FORECASTER_MODEL_PATH, 'scaler.pkl'))
+        net = NeuralNet(
+            GradeLSTM(examples_to_predict.shape[-1]),
+            max_epochs=0,
+            criterion=nn.MSELoss
+            )
+        net.initialize()
+        net.load_params(f_params=os.path.join(GRADE_FORECASTER_MODEL_PATH, 'weights.pt'))
+        model = Pipeline([
+            ('scaler', scaler),
+            ('regressor', net)
+        ])
+
     except FileNotFoundError:
         return
-    
-    future_days_predictions = model.predict(examples_to_predict)
-    predictions = np.array(future_days_predictions).flatten()
 
+    future_days_predictions = []
+    sequences = []
+    for example_idx, example in enumerate(examples_to_predict):
+        if example_idx == 0:
+            sequences.append([*past_examples, example])
+        else:
+            sequences.append([*past_examples, *examples_to_predict[:example_idx], example])
+
+        predictions = [model.predict(np.array([sequence])) for sequence in sequences]
+        future_days_predictions.extend(predictions)
+ 
+    predictions = np.array(future_days_predictions).flatten()
+    print(predictions)
     return predictions * 100  # Convert decimals 0-1 to 0-100 since model uses sigmoid activation function in output layer
 
 def create_grades_vs_time_with_predictions(
