@@ -193,8 +193,17 @@ def create_data_for_grade_prediction_from_course(user: User, course_index: int) 
 
     return examples, targets
 
-def get_grade_forecasting_architecture() -> tuple[type]:
+def get_grade_forecasting_architecture(**kwargs):
+    """
+    Returns the model for predicting grades.
+
+    Returns:
+        A NeuralNet object built with skorch.
+    """
+
     import torch.nn as nn
+    from skorch.net import NeuralNet
+    import torch.optim as optim
 
     class GradeLSTM(nn.Module):
         def __init__(self, n_features: int):
@@ -220,7 +229,15 @@ def get_grade_forecasting_architecture() -> tuple[type]:
 
             return x
 
-    return GradeLSTM
+    network = NeuralNet(
+                GradeLSTM(6),
+                criterion=nn.MSELoss,
+                optimizer=optim.Adam,
+                train_split=None,
+                **kwargs
+                )
+
+    return network
 
 def train_model_on_user_grade_data(app: Flask, epochs: int = 500, learning_rate: float = 0.01) -> None:
     """
@@ -233,12 +250,12 @@ def train_model_on_user_grade_data(app: Flask, epochs: int = 500, learning_rate:
     """
     # Lazy importing
     import torch
-    import torch.optim as optim
     from sklearn.pipeline import Pipeline
-    from skorch.net import NeuralNet
-    import torch.nn as nn
-
-    GradeLSTM = get_grade_forecasting_architecture()
+    
+    GradeLSTM = get_grade_forecasting_architecture(
+        learning_rate=learning_rate,
+        epochs=epochs
+    )
     
     torch.manual_seed(42)
 
@@ -282,15 +299,7 @@ def train_model_on_user_grade_data(app: Flask, epochs: int = 500, learning_rate:
         # CREATING / FITTING MODEL
         model_pipeline = Pipeline(steps=[
             ('scaler', ScalerLSTM3D()),
-            ('regressor', NeuralNet(
-                network,
-                criterion=nn.MSELoss,
-                optimizer=optim.Adam,
-                lr=learning_rate,
-                train_split=None,
-                max_epochs=epochs
-                )
-            )
+            ('regressor', GradeLSTM)
         ])
 
         # Regular serialization (pickle / joblib) isn't compatible with local classes
@@ -299,8 +308,6 @@ def train_model_on_user_grade_data(app: Flask, epochs: int = 500, learning_rate:
         skorch_net.save_params(f_params=os.path.join(GRADE_FORECASTER_MODEL_PATH, 'weights.pt'))
 
         joblib.dump(model_pipeline['scaler'], os.path.join(GRADE_FORECASTER_MODEL_PATH, 'scaler.pkl'))
-
-
 
 def predict_grades(
         course_index: int,
@@ -323,7 +330,6 @@ def predict_grades(
 
     """
     from sklearn.pipeline import Pipeline
-    from skorch.net import NeuralNet
 
     course = current_user.courses[course_index]
     future_days = [
@@ -346,13 +352,8 @@ def predict_grades(
     examples_to_predict = np.asarray(examples_to_predict, dtype=np.float32)
 
     try:
-        GradeLSTM = get_grade_forecasting_architecture()
         scaler = joblib.load(os.path.join(GRADE_FORECASTER_MODEL_PATH, 'scaler.pkl'))
-        net = NeuralNet(
-            GradeLSTM(examples_to_predict.shape[-1]),
-            max_epochs=0,
-            criterion=lambda y_pred, y_true: y_pred  # Importing pytorch is computationally expensive
-            )
+        net = get_grade_forecasting_architecture()
         net.initialize()
         net.load_params(f_params=os.path.join(GRADE_FORECASTER_MODEL_PATH, 'weights.pt'))
         model = Pipeline([
