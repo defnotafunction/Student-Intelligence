@@ -67,6 +67,9 @@ admin = Admin(app, name="Admin's Dashboard", index_view=SecureIndexView())
 admin.add_view(SecureModelView(User, db.session))
 admin.add_view(ModelTrainingView('Model Training'))
 
+with app.app_context():
+    db.create_all()
+
 @login_manager.user_loader
 def load_user(user_id):
     return db.session.get(User, int(user_id))
