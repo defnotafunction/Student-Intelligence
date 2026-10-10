@@ -1,4 +1,4 @@
 .env
 data/mlmodels/
 instance/app.db
-admin/training.html
+src/admin/training.html
