@@ -96,14 +96,14 @@ def login():
 
     return render_template('login.html', page_name='Login', form=login_form)
 
-@app.route('/sign-in', methods=['GET', 'POST'])
-def signin():
-    """The Sign-in route."""
-    signin_form = LoginForm()  # The LoginForm has the same fields signing in needs.
+@app.route('/sign-up', methods=['GET', 'POST'])
+def signup():
+    """The Sign-up route."""
+    signup_form = LoginForm()  # The LoginForm has the same fields signing in needs.
     
-    if signin_form.validate_on_submit():
-        input_username = signin_form.username.data
-        input_password = signin_form.password.data
+    if signup_form.validate_on_submit():
+        input_username = signup_form.username.data
+        input_password = signup_form.password.data
         
         if get_user_exists(db, input_username):
             flash('User already exists.')
@@ -113,7 +113,7 @@ def signin():
             login_user(user, remember=True)
             return redirect(url_for('index'))
 
-    return render_template('login.html', page_name='Sign In', form=signin_form)
+    return render_template('login.html', page_name='Sign Up', form=signup_form)
 
 @app.route('/logout')
 def logout():
